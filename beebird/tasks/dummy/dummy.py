@@ -18,7 +18,7 @@ def _(task):
 
 
 def _register():
-    from ...cmd import registerCmd
+    from beebird.cmd import registerCmd
     registerCmd('dummy')
 
 _register()

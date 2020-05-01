@@ -1,3 +1,3 @@
 # beebird
 
-cross-platform task running platform
+Task running platform for Python 3.
