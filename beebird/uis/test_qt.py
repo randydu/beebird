@@ -1,8 +1,9 @@
 
 from . import qt
-from ..task import Task
 
-Task.importAllTasks()
+import beebird
+
+beebird.importBuiltinTasks()
 
 def test_qt_create():
     qt.createTask("Hello")

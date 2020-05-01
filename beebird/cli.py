@@ -1,13 +1,12 @@
 import sys
 
 def main(*argv):
-    from .task import Task
-    Task.importAllTasks()
-
     print("CLI >>", *argv)
 
-    from . import cmd
-    cmd.run(gui=False)
+    import beebird
+
+    beebird.importBuiltinTasks()
+    beebird.cmd.run(gui=False)
 
 
 

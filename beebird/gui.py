@@ -3,12 +3,10 @@ import sys
 def main(*argv):
     print("GUI >>", *argv)
 
-    # loads all plugin tasks under the "./tasks" folder
-    from .task import Task
-    Task.importAllTasks()
+    import beebird
 
-    from . import cmd
-    cmd.run(gui=True)
+    beebird.importBuiltinTasks()
+    beebird.cmd.run(gui=True)
     
 
 if __name__ == "__main__": 

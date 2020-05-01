@@ -75,14 +75,6 @@ class Task(object):
         with open(fname, "w") as f:
             f.write(jstr)
 
-    @staticmethod
-    def importAllTasks():
-        ''' import all available tasks in qbackup/tasks folder 
-        
-            the ./tasks/__init__.py will dynamically import all sub-packages
-        '''
-        from . import tasks
-
 
 
     # run

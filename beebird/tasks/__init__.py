@@ -1,11 +1,7 @@
 
 # imports all tasks in this folder
-def _importTasks():
-    import pkgutil
-    import importlib
-    import pathlib
+import pathlib
 
-    for _, name, _ in pkgutil.iter_modules([pathlib.Path(__file__).parent]):
-        importlib.import_module('.'+name, package=__name__)
+import beebird
 
-_importTasks()
+beebird.importTasks(pathlib.Path(__file__).parent, __name__)
