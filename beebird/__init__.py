@@ -14,12 +14,6 @@ def importTasks(dir, package):
         importlib.import_module('.'+name, package=package)
 
 
-def registerCmd(name):
-    ''' register a command '''
-    from .cmd import registerCmd
-    registerCmd(name)
-
-
 def importBuiltinTasks():
     ''' load all beebird's built-in tasks (under {beebird_pkg_dir}/tasks/) 
 

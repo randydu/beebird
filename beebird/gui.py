@@ -6,7 +6,7 @@ def main(*argv):
     import beebird
 
     beebird.importBuiltinTasks()
-    beebird.cmd.run(gui=True)
+    beebird.task.run(gui=True)
     
 
 if __name__ == "__main__": 

@@ -6,7 +6,7 @@ def main(*argv):
     import beebird
 
     beebird.importBuiltinTasks()
-    beebird.cmd.run(gui=False)
+    beebird.task.run(gui=False)
 
 
 

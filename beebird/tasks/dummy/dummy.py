@@ -1,5 +1,4 @@
 
-import beebird
 from beebird.task import task
 from beebird.job import job
 
@@ -16,6 +15,3 @@ def _(task):
     for i in range(total):
         sleep(1)
         task.progress = (i+1)/total
-
-
-beebird.registerCmd('dummy')

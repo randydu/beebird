@@ -1,10 +1,5 @@
-import beebird
-
 from beebird.task import task
 from beebird.job import job
-
-beebird.registerCmd('hello')
-
 
 @task
 class Hello:

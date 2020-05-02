@@ -3,9 +3,60 @@ Task
 """
 
 from py_json_serialize import json_decode, json_encode
+from py_singleton import singleton
 
 from enum import IntEnum
+
+class Group(object):
+    ''' task group '''
+    def __init__(self, name):
+        self.name = name
+
+@singleton
+class GroupMan(object):
+    ''' group manager '''
+    def __init__(self):
+        self.groups = {}
+    
+    def get(self, name:str, createIfNonExistent=True)-> Group:
+        ''' get group by name '''
+        try:
+            g = self.groups[name]
+        except KeyError:
+            if not createIfNonExistent:
+                raise ValueError(f"group '{name}' not found")
+
+            g = Group(name)
+            self.groups[name] = g
         
+        return g
+
+
+
+class MetaInfo(object):
+    ''' task meta-info '''
+    name = ""  # task name
+    group = None
+    description = ""
+    hidden = False
+    system = False
+
+@singleton
+class TaskMan(object):
+    ''' Task Class Manager '''
+    def __init__(self):
+        self.tasks = [] # array of task classes
+    
+    def registerTask(self, clsTask):
+        ''' register a task class '''
+        if clsTask in self.tasks:
+            raise ValueError(f"class '{clsTask.__name__}' already registered!")
+
+        print(f"registering {clsTask.__name__}\r\n")
+
+        self.tasks.append(clsTask)
+
+
 class Task(object):
     """ Basic unit of job """
     class Status(IntEnum):
@@ -21,7 +72,8 @@ class Task(object):
         CANCELLED = 2, # cancelled
         ERROR = 3 # error occurs
 
-    _clsJob = None # job class to execute the task
+    __clsJob = None # job class to execute the task
+    __metaInfo = None # task meta-info
 
     _status = Status.INIT
     _ec = ErrorCode.INVALID 
@@ -34,13 +86,17 @@ class Task(object):
 
     @classmethod
     def getJobClass(cls):
-        return cls._clsJob
+        return cls.__clsJob
 
     @classmethod
     def setJobClass(cls, clsJob):
-        if cls._clsJob:
-            raise Exception(f"task ({cls.__name__}) is already binded to job class {clsJob.__name__}")
-        cls._clsJob = clsJob
+        if cls.__clsJob:
+            raise Exception(f"task ({cls.__name__}) is already binded to job class {cls.__clsJob.__name__}")
+        cls.__clsJob = clsJob
+
+    @classmethod
+    def getMetaInfo(cls):
+        return cls.__metaInfo
 
     @property
     def status(self):
@@ -145,10 +201,31 @@ def task(clsTask):
 
     from py_json_serialize import json_serialize
 
-    class WrapTask(Task, clsTask):pass
+    class WrapTask(Task, clsTask):
+        def __init__(self,*args,**kwargs):
+            Task.__init__(self)
+            clsTask.__init__(self, *args,**kwargs)
 
     # simulate the name of input class
     WrapTask.__name__ = clsTask.__name__
     WrapTask.__qualname__ = clsTask.__qualname__
 
+    TaskMan.instance().registerTask(WrapTask)
+
     return json_serialize(WrapTask)
+
+
+
+# =============================
+
+
+def run(gui = True):
+    jstr = '{ "_clsid_":"DummyTask" }'
+    task = Task.from_json(jstr)
+
+    if gui:
+        from .uis import qt
+        qt.run(task)
+    else:
+        from .uis import console
+        console.run(task)
