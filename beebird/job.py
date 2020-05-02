@@ -24,7 +24,7 @@ class Job:
 
     def execute(self, wait = True):
         self._task.onSubmitted()
-        self._future = runner.Runner.instance().submitJob(self)
+        self._future = runner.submitJob(self)
         self._future.add_done_callback(self._cbDone)
         return self._future.result() if wait else None 
 
@@ -43,8 +43,8 @@ class runtask(object):
     
     ex:  
          
-         @task(MultiFilesCopy)
-         @task(SingleFileCopy)
+         @runtask(MultiFilesCopy)
+         @runtask(SingleFileCopy)
          class FileCopyJob(Job):
              def __call__(self):
                  pass
@@ -54,7 +54,7 @@ class runtask(object):
         self._clsTask = clsTask
 
     def __call__(self, clsJob):
-        runner.Runner.instance().registerJob(self._clsTask, clsJob)
+        self._clsTask.setJobClass(clsJob)
         return clsJob
 
 
@@ -73,7 +73,7 @@ def job(clsTask):
                 super().__call__()
                 f(self._task)
     
-        runner.Runner.instance().registerJob(clsTask, WrapJob)
+        clsTask.setJobClass(WrapJob)
 
 
     return toDecorate

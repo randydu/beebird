@@ -2,7 +2,6 @@
 Task
 """
 
-from .runner import Runner
 from py_json_serialize import json_decode, json_encode
 
 from enum import IntEnum
@@ -22,6 +21,7 @@ class Task(object):
         CANCELLED = 2, # cancelled
         ERROR = 3 # error occurs
 
+    _clsJob = None # job class to execute the task
 
     _status = Status.INIT
     _ec = ErrorCode.INVALID 
@@ -31,6 +31,16 @@ class Task(object):
 
     def __init__(self):
         pass
+
+    @classmethod
+    def getJobClass(cls):
+        return cls._clsJob
+
+    @classmethod
+    def setJobClass(cls, clsJob):
+        if cls._clsJob:
+            raise Exception(f"task ({cls.__name__}) is already binded to job class {clsJob.__name__}")
+        cls._clsJob = clsJob
 
     @property
     def status(self):
@@ -84,7 +94,11 @@ class Task(object):
         self._error = None
         self._result = None
         
-        Runner.instance().runTask(self, wait)
+        cls_job = self.getJobClass()
+        if cls_job is None:
+            raise ValueError(f"task type ({type(self).__name__}) not supported!")
+        
+        return cls_job(self).execute(wait)
 
     # event listeners
     def onSubmitted(self):
