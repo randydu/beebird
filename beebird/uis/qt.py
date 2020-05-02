@@ -1,7 +1,7 @@
 """ Qt based TaskUI implementation """
 
 
-from beebird.task import Task
+from beebird.task import Task, TaskMan
 
 from ..ui import TaskUI
 
@@ -103,11 +103,11 @@ def run(task):
     ''' run a task '''
     _TaskUIQt(task).run()
 
-def createTask(clsid):
-    ''' create a task of type (clsid)'''
+def createTask(clsname):
+    ''' create a task by name '''
     import py_json_serialize
 
-    clsTask = py_json_serialize.resolveTaskClass(clsid)
+    clsTask = TaskMan.instance().findTaskByName(clsname)
     obj = clsTask()
 
     # both class and object fields are needed to create a task

@@ -56,6 +56,13 @@ class TaskMan(object):
 
         self.tasks.append(clsTask)
 
+    def findTaskByName(self, name):
+        ''' find registered task class by its name  '''
+        for i in self.tasks:
+            if i.__name__ == name or ( i._metaInfo_ and i._metaInfo_.name == name):
+                return i
+
+        raise ValueError(f"task class name '{name}' not found")
 
 class Task(object):
     """ Basic unit of job """
@@ -72,8 +79,8 @@ class Task(object):
         CANCELLED = 2, # cancelled
         ERROR = 3 # error occurs
 
-    __clsJob = None # job class to execute the task
-    __metaInfo = None # task meta-info
+    _clsJob_ = None # job class to execute the task
+    _metaInfo_ = None # task meta-info
 
     _status = Status.INIT
     _ec = ErrorCode.INVALID 
@@ -86,17 +93,17 @@ class Task(object):
 
     @classmethod
     def getJobClass(cls):
-        return cls.__clsJob
+        return cls._clsJob_
 
     @classmethod
     def setJobClass(cls, clsJob):
-        if cls.__clsJob:
-            raise Exception(f"task ({cls.__name__}) is already binded to job class {cls.__clsJob.__name__}")
-        cls.__clsJob = clsJob
+        if cls._clsJob_:
+            raise Exception(f"task ({cls.__name__}) is already binded to job class {cls._clsJob_.__name__}")
+        cls._clsJob_ = clsJob
 
     @classmethod
     def getMetaInfo(cls):
-        return cls.__metaInfo
+        return cls._metaInfo_
 
     @property
     def status(self):
