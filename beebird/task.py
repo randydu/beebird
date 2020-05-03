@@ -2,7 +2,7 @@
 Task
 """
 
-from py_json_serialize import json_decode, json_encode
+from py_json_serialize import json_decode, json_encode, json_serialize
 from py_singleton import singleton
 
 from enum import IntEnum
@@ -190,7 +190,7 @@ class Task(object):
         self._status = Task.Status.DONE
 
 
-def task(clsTask):
+def _task_class(clsTask):
     ''' 
     class decorator to turn a normal class to a subclass of Task
     
@@ -206,8 +206,6 @@ def task(clsTask):
 
     '''
 
-    from py_json_serialize import json_serialize
-
     class WrapTask(Task, clsTask):
         def __init__(self,*args,**kwargs):
             Task.__init__(self)
@@ -222,6 +220,33 @@ def task(clsTask):
     return json_serialize(WrapTask)
 
 
+def _task_func(func):
+    ''' @task decorating function '''
+
+    class WrapTask(Task):
+        a = None
+        b = None
+
+    tskName = func.__name__
+    WrapTask.__name__ = tskName
+    WrapTask.__qualname__ = tskName
+    TaskMan.instance().registerTask(json_serialize(WrapTask))
+
+    from .job import Job
+    class WrapJob(Job):
+        def __call__(self):
+            return func(a=self._task.a, b = self._task.b)
+
+    WrapTask.setJobClass(WrapJob)
+
+    return func
+
+def task(cls_or_func):
+    if isinstance(cls_or_func, type):
+        return _task_class(cls_or_func)
+    else:
+        return _task_func(cls_or_func)
+    
 
 # =============================
 
