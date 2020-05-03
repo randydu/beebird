@@ -1,7 +1,12 @@
+""" Task management and running platform for python 3
+
+
+
+"""
 
 __license__ = "MIT"
 __author__ = "Randy Du <randydu@gmail.com>"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 def importTasks(dir, package):
     '''

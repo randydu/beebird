@@ -9,28 +9,15 @@ packages = find_packages()
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-def extract_version(filename):
-    import re
-    pattern = re.compile(r'''__version__\s*=\s*"(?P<ver>[0-9\.]+)".*''')
-    with open(filename, 'r') as fd:
-        for line in fd:
-            match = pattern.match(line)
-            if match:
-                ver = match.groupdict()['ver']
-                break
-        else:
-            raise Exception('ERROR: cannot find version string.')
-    return ver
-
-version = extract_version('%s/__init__.py' % package_name)
+from beebird import __version__, __doc__, __license__
 
 url = "https://github.com/%s/%s.git" % (author, package_name)
-download_url = "https://github.com/%s/%s/archive/v%s.tar.gz" % (author, package_name, version)
+download_url = "https://github.com/%s/%s/archive/v%s.tar.gz" % (author, package_name, __version__)
 
 setup(name=package_name, 
     packages=packages,
-    version=version,
-    description = "task running platform for python 3",
+    version=__version__,
+    description = __doc__.split('\n')[0],
     long_description = long_description,
     long_description_content_type="text/markdown",
     url=url,
@@ -38,7 +25,7 @@ setup(name=package_name,
     author = author,
     author_email= "randydu@gmail.com",
     keywords=["task", "cmdlet"],
-    license="MIT",
+    license=__license__,
     classifiers=[
     'Development Status :: 2 - Pre-Alpha',
     'Intended Audience :: Developers', 
