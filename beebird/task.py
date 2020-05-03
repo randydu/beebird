@@ -223,19 +223,19 @@ def _task_class(clsTask):
 def _task_func(func):
     ''' @task decorating function '''
 
-    class WrapTask(Task):
-        a = None
-        b = None
+    import inspect
+
+    params = inspect.signature(func).parameters
 
     tskName = func.__name__
-    WrapTask.__name__ = tskName
-    WrapTask.__qualname__ = tskName
+    WrapTask = type(tskName, (Task,), { x: params[x].default for x in params })
+
     TaskMan.instance().registerTask(json_serialize(WrapTask))
 
     from .job import Job
     class WrapJob(Job):
         def __call__(self):
-            return func(a=self._task.a, b = self._task.b)
+            return func.__call__(**{ x: self._task.__getattribute__(x) for x in params })
 
     WrapTask.setJobClass(WrapJob)
 
