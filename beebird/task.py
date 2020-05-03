@@ -161,7 +161,7 @@ class Task(object):
         if cls_job is None:
             raise ValueError(f"task type ({type(self).__name__}) not supported!")
         
-        job = cls_job(self)
+        job = cls_job(self) # pylint: disable=not-callable
         return job.execute(wait)
 
     # event listeners
@@ -216,7 +216,7 @@ def _task_class(clsTask):
     WrapTask.__name__ = clsTask.__name__
     WrapTask.__qualname__ = clsTask.__qualname__
 
-    TaskMan.instance().registerTask(WrapTask)
+    TaskMan.instance().registerTask(WrapTask) # pylint: disable=no-member
 
     return json_serialize(WrapTask)
 
@@ -231,7 +231,7 @@ def _task_func(func):
     tskName = func.__name__
     WrapTask = type(tskName, (Task,), { x: params[x].default for x in params })
 
-    TaskMan.instance().registerTask(json_serialize(WrapTask))
+    TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member
 
     from .job import Job
     class WrapJob(Job):

@@ -61,7 +61,7 @@ class _TaskUIQt(TaskUI):
         ''' create a task object with fields '''
         import sys
 
-        app = QApplication(sys.argv)
+        app = QApplication(sys.argv) # pylint: disable= unused-variable
 
         dlg = QDialog()
         taskName = type(obj).__name__
