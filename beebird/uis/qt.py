@@ -42,7 +42,6 @@ class _TaskUIQt(TaskUI):
         self._task.run(wait = False)
         statusBar.showMessage('running...')
 
-
         def task_monitor():
             if self._task.isProgressAvailable():
                 taskGauge.setValue(self._task.progress*100)

@@ -87,6 +87,7 @@ class Task(object):
     _error = None  # task error on failure
     _result = None # task result on success
     _progress: float = 0
+    _job = None # job instance to execute this task
 
     def __init__(self):
         pass
@@ -152,7 +153,7 @@ class Task(object):
 
     # run
     def run(self, wait = True):
-        """ [sync] execute the task, returns when the task is either done or cancelled """
+        """ wait= True, sync, execute the task, returns when the task is either done or cancelled """
 
         self._error = None
         self._result = None
@@ -161,7 +162,8 @@ class Task(object):
         if cls_job is None:
             raise ValueError(f"task type ({type(self).__name__}) not supported!")
         
-        return cls_job(self).execute(wait)
+        self._job = cls_job(self)
+        return self._job.execute(wait)
 
     # event listeners
     def onSubmitted(self):

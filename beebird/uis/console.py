@@ -39,6 +39,9 @@ class _TaskUIConsole(TaskUI):
     def run(self):
         import threading
 
+        lck = threading.Lock()
+        lck.acquire()
+
         self._task.run(wait = False)
 
         self.update()
@@ -50,9 +53,16 @@ class _TaskUIConsole(TaskUI):
                 self.timer.start()
             else:
                 print('\ndone')
+                lck.release()
 
         self.timer = threading.Timer(1, task_monitor)
         self.timer.start()
+
+        lck.acquire() # wait until the task_monitor() has updated the done status.
+
+        print('\ngame over!')
+
+
 
 
 def run(task):
