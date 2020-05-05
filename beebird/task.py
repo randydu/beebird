@@ -56,7 +56,7 @@ class TaskMan(object):
 
         self.tasks.append(clsTask)
 
-    def findTaskByName(self, name):
+    def getTaskByName(self, name):
         ''' find registered task class by its name  '''
         for i in self.tasks:
             if i.__name__ == name or ( i._metaInfo_ and i._metaInfo_.name == name):

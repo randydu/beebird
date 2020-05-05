@@ -106,7 +106,7 @@ def createTask(clsname):
     ''' create a task by name '''
     import py_json_serialize
 
-    clsTask = TaskMan.instance().findTaskByName(clsname)
+    clsTask = TaskMan.instance().getTaskByName(clsname)
     obj = clsTask()
 
     # both class and object fields are needed to create a task

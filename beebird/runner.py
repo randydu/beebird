@@ -9,7 +9,7 @@ class _Runner(object):
     """ task executor """
 
     def __init__(self):
-        self._executor = futures.ThreadPoolExecutor(max_workers=2)
+        self._executor = futures.ThreadPoolExecutor(max_workers=4)
 
     def submitJob(self, job):
         return self._executor.submit(job)
