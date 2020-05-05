@@ -26,7 +26,7 @@ class Parallel(Task):
     
 
 @runtask(Parallel)
-class ParalletJob(Job):
+class _ParalletJob(Job):
     def __init__(self, task):
         super().__init__(task)
 
@@ -60,7 +60,7 @@ class ParalletJob(Job):
         if self._total > 0:
             with self._cv:
                 for i in tasks:
-                    i.run()
+                    i.run(wait=False)
                 
                 self._cv.wait()
 
@@ -68,6 +68,34 @@ class ParalletJob(Job):
 
         
         
+
+# ----------- Serial -------------
+class Serial(Task):
+    def __init__(self, tasks):
+        self._tasks = tasks
+
+@runtask(Serial)
+class _SerialJob(Job):
+    ''' execute task in serial '''
+
+    def __call__(self):
+        super().__call__()
+
+        tasks = self._task._tasks
+        
+        total = len(tasks)
+        self._task.progress = 0
+
+        if total > 0:
+            count = 0
+            for i in tasks:
+                i.run(wait= True)
+                count += 1
+                self._task.progress = count / total
+
+        return [ t.result for t in tasks ]
+
+
 
 
 
