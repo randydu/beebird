@@ -21,7 +21,7 @@ class Parallel(Task):
 
         assert task.result == [ tA.result, tB.result, tC.result ]
     '''
-    def __init__(self, tasks):
+    def __init__(self, *tasks):
         self._tasks = tasks 
     
 
@@ -71,7 +71,7 @@ class _ParalletJob(Job):
 
 # ----------- Serial -------------
 class Serial(Task):
-    def __init__(self, tasks):
+    def __init__(self, *tasks):
         self._tasks = tasks
 
 @runtask(Serial)
