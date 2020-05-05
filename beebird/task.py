@@ -88,6 +88,23 @@ class Task(object):
     _result = None # task result on success
     _progress: float = 0
 
+    _done_callbacks = None # external callbacks called when task is finished.  signature: Callback(task)
+
+    def addDoneCallback(self, cb):
+        if self._done_callbacks is None:
+            self._done_callbacks = []
+        
+        if cb in self._done_callbacks:
+            raise ValueError('Duplicated done callback')
+
+        self._done_callbacks.append(cb)
+
+    def _callDoneCallbacks(self):
+        if self._done_callbacks:
+            for cb in self._done_callbacks:
+                cb(self)
+    
+
     def __init__(self):
         pass
 
@@ -179,16 +196,22 @@ class Task(object):
         self._status = Task.Status.DONE
         self._result = result
 
+        self._callDoneCallbacks()
+
     def onError(self, err):
         ''' called when task is done with exception /error '''
         self.ErrorCode = Task.ErrorCode.ERROR
         self._error = err
         self._status = Task.Status.DONE
 
+        self._callDoneCallbacks()
+
     def onCancelled(self): 
         ''' called when task is cancelled '''
         self.ErrorCode = Task.ErrorCode.CANCELLED
         self._status = Task.Status.DONE
+
+        self._callDoneCallbacks()
 
 
 def _task_class(clsTask):
@@ -222,7 +245,17 @@ def _task_class(clsTask):
 
 
 def _task_func(func):
-    ''' @task decorating function '''
+    ''' @task decorating function 
+    
+        the function is turned into a task class:
+
+        @task
+        def Alarm():
+            print("Beep!!!")
+
+        tsk = Alarm()
+        tsk.run()
+    '''
 
     import inspect
 
@@ -240,7 +273,7 @@ def _task_func(func):
 
     WrapTask.setJobClass(WrapJob)
 
-    return func
+    return WrapTask
 
 def task(cls_or_func):
     if isinstance(cls_or_func, type):
