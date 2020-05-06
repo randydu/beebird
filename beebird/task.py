@@ -114,8 +114,11 @@ class Task(object):
 
     @classmethod
     def setJobClass(cls, clsJob):
-        if cls._clsJob_:
-            raise Exception(f"task ({cls.__name__}) is already binded to job class {cls._clsJob_.__name__}")
+        if cls._clsJob_ is not None:
+            from . import job
+            if cls._clsJob != job._CallableTaskJob:
+                # external job class binding is allowed only once.
+                raise Exception(f"task ({cls.__name__}) is already binded to job class {cls._clsJob_.__name__}")
         cls._clsJob_ = clsJob
 
     @classmethod
@@ -177,8 +180,9 @@ class Task(object):
         cls_job = self.getJobClass()
         if cls_job is None:
             raise ValueError(f"task type ({type(self).__name__}) not supported!")
-        
+
         job = cls_job(self) # pylint: disable=not-callable
+
         return job.execute(wait)
 
     # event listeners
@@ -239,6 +243,12 @@ def _task_class(clsTask, public):
     WrapTask.__name__ = clsTask.__name__
     WrapTask.__qualname__ = clsTask.__qualname__
 
+    # if the class object is callable then we assume it is the default Job class to deal with this task.
+    # it can be modified by @runtask (in job module)
+    if '__call__' in dir(WrapTask):
+        from .job import _CallableTaskJob 
+        WrapTask.setJobClass(_CallableTaskJob)
+
     if public:
         TaskMan.instance().registerTask(WrapTask) # pylint: disable=no-member
         return json_serialize(WrapTask)
@@ -271,6 +281,7 @@ def _task_func(func, public):
     from .job import Job
     class WrapJob(Job):
         def __call__(self):
+            super().__call__()
             return func.__call__(**{ x: self._task.__getattribute__(x) for x in params })
 
     WrapTask.setJobClass(WrapJob)

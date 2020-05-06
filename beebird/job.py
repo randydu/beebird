@@ -37,6 +37,14 @@ class Job:
             self._task.onError(e)
 
 
+class _CallableTaskJob(Job):
+    ''' Job to deal with callable task 
+        
+        It is the default job class if no other Job class is specified for a task class via @runtask
+    '''
+    def __call__(self):
+        super().__call__()
+        return self._task()
     
 class runtask(object):
     """ class decorator to specify which task type to associate 
