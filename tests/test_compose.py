@@ -1,16 +1,16 @@
 from beebird import compose
 
-from beebird.task import task
+from beebird.task import task, task_ as ptask 
 
 def test_parallel():
 
-    @task
+    @ptask
     def P1(): return 1
 
-    @task
+    @ptask
     def P2(): return 2
     
-    @task
+    @ptask
     def P3(): return 3
 
     tsk = compose.Parallel(P1(), P2(), P3())
@@ -20,13 +20,13 @@ def test_parallel():
 
 def test_serial():
 
-    @task
+    @ptask
     def S1(): return 1
 
-    @task
+    @ptask
     def S2(): return 2
     
-    @task
+    @ptask
     def S3(): return 3
 
     tsk = compose.Serial(S1(), S2(), S3())
@@ -36,16 +36,16 @@ def test_serial():
 
 def test_serial_flatten():
 
-    @task
+    @ptask
     def S1(): return 1
 
-    @task
+    @ptask
     def S2(): return 2
     
-    @task
+    @ptask
     def S3(): return 3
 
-    @task
+    @ptask
     def S4(): return 4
 
     tsk = compose.Serial(S1(), compose.Serial(S2(), S3()))
@@ -60,16 +60,16 @@ def test_serial_flatten():
 
 
 def test_mixed(): 
-    @task
+    @ptask
     def MP1(): return 'mp1'
 
-    @task
+    @ptask
     def MP2(): return 'mp2'
     
-    @task
+    @ptask
     def MS1(): return 'ms1'
 
-    @task
+    @ptask
     def MS2(): return 'ms2'
 
     tsk = compose.Serial( MS1(), compose.Parallel(MP1(), MP2()), MS2() )

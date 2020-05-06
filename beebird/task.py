@@ -214,7 +214,7 @@ class Task(object):
         self._callDoneCallbacks()
 
 
-def _task_class(clsTask):
+def _task_class(clsTask, public):
     ''' 
     class decorator to turn a normal class to a subclass of Task
     
@@ -239,12 +239,13 @@ def _task_class(clsTask):
     WrapTask.__name__ = clsTask.__name__
     WrapTask.__qualname__ = clsTask.__qualname__
 
-    TaskMan.instance().registerTask(WrapTask) # pylint: disable=no-member
+    if public:
+        TaskMan.instance().registerTask(WrapTask) # pylint: disable=no-member
+        return json_serialize(WrapTask)
+    else:
+        return WrapTask
 
-    return json_serialize(WrapTask)
-
-
-def _task_func(func):
+def _task_func(func, public):
     ''' @task decorating function 
     
         the function is turned into a task class:
@@ -264,7 +265,8 @@ def _task_func(func):
     tskName = func.__name__
     WrapTask = type(tskName, (Task,), { x: params[x].default for x in params })
 
-    TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member
+    if public:
+        TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member
 
     from .job import Job
     class WrapJob(Job):
@@ -275,12 +277,50 @@ def _task_func(func):
 
     return WrapTask
 
-def task(cls_or_func):
+def _public_task(cls_or_func):
     if isinstance(cls_or_func, type):
-        return _task_class(cls_or_func)
+        return _task_class(cls_or_func, True)
     else:
-        return _task_func(cls_or_func)
+        return _task_func(cls_or_func, True)
     
+def _private_task(cls_or_func):
+    if isinstance(cls_or_func, type):
+        return _task_class(cls_or_func, False)
+    else:
+        return _task_func(cls_or_func, False)
+
+def task(public = True):
+    '''
+    # public tasks
+    @task
+    def Hey():pass
+    
+    @task(public=True)
+    def Hey():pass
+    
+    @task
+    class Hello(object):pass
+
+    @task(True)
+    class Hello(object):pass
+
+    # private tasks
+    @task(public=False)
+    def PrivateHey():pass
+
+    @task(False)
+    class PrivateHello(object):pass
+    '''
+
+    if isinstance(public, type) or type(public).__name__ == 'function':
+        return _public_task(public)
+
+    return _public_task if public else _private_task
+
+
+# shortcut of private task
+task_ = task(False)
+
 
 # =============================
 
