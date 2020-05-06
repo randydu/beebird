@@ -71,7 +71,20 @@ class _ParalletJob(Job):
 
 # ----------- Serial -------------
 class Serial(Task):
+    ''' execute tasks in serial '''
     def __init__(self, *tasks):
+        self._tasks = tasks
+
+    def flatten(self):
+        ''' flatten the nesting serial tasks '''
+        tasks = []
+        for i in self._tasks:
+            if isinstance(i, Serial):
+                i.flatten()
+                tasks.extend(i._tasks)
+            else:
+                tasks.append(i)
+                
         self._tasks = tasks
 
 @runtask(Serial)

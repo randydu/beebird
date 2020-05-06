@@ -34,6 +34,31 @@ def test_serial():
 
     assert tsk.result == [1, 2, 3]
 
+def test_serial_flatten():
+
+    @task
+    def S1(): return 1
+
+    @task
+    def S2(): return 2
+    
+    @task
+    def S3(): return 3
+
+    @task
+    def S4(): return 4
+
+    tsk = compose.Serial(S1(), compose.Serial(S2(), S3()))
+    tsk.run()
+    assert tsk.result == [1, [2, 3]]
+
+    tsk.flatten()
+    tsk.run()
+
+    assert tsk.result == [1, 2, 3]
+
+
+
 def test_mixed(): 
     @task
     def MP1(): return 'mp1'
