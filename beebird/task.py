@@ -220,15 +220,29 @@ class Task(object):
     # --- Operator overloading ---
     
     def __add__(self, tsk):
-        ''' task_a + task_b returns parallel task '''
-        from . import compose
-        return compose.Parallel(self, tsk)
+        ''' task_a + task_b returns parallel task 
+        
+            task + unity = task
+            unity + task = task
+        '''
+
+        if id(tsk) == id(unity):
+            return self
+        else:
+            from . import compose
+            return compose.Parallel(self, tsk)
 
     def __mul__(self, tsk):
-        ''' task_a * task_b returns serial task '''
-        from . import compose
-        return compose.Serial(self, tsk)
-
+        ''' task_a * task_b returns serial task 
+        
+            task + unity = task
+            unity + task = task
+        '''
+        if id(tsk) == id(unity):
+            return self
+        else:
+            from . import compose
+            return compose.Serial(self, tsk)
 
 
 def _task_class(clsTask, public):
@@ -345,6 +359,29 @@ def task(public = True):
 # shortcut of private task
 task_ = task(False)
 
+# ----- Unity task ------
+class _Unity(Task):
+    ''' unity task does nothing itself but plays the role of 0 and 1 
+    in task composition:
+
+        unity + task = task
+        task + unity = task
+
+        unity * task = task
+        task * unity = task
+    '''
+    def run(self, wait = True):pass
+
+    def __add__(self, tsk):
+        ''' unity + task returns task '''
+        return tsk
+
+    def __mul__(self, tsk):
+        ''' unity * task returns task '''
+        return tsk
+
+
+unity = _Unity()
 
 # =============================
 

@@ -1,4 +1,4 @@
-from beebird.task import Task, task_, task, TaskMan
+from beebird.task import Task, task_, task, TaskMan, unity
 
 def test_task_create():
     tsk = Task()
@@ -52,15 +52,17 @@ def test_task_decorator():
 def test_serial(): 
     @task_
     def F(i): 
+        import time
+        time.sleep(1)
         print(f"\n>> {i}")
         return i
 
-    g = None
+    g = unity
     for x in range(5):
         f = F()
         f.i = x
 
-        g = f if g is None else g*f
+        g = g*f 
 
     g.run()
    
@@ -69,24 +71,41 @@ def test_serial():
 
 
 def test_parallel(): 
-    import time
 
     @task_
     def F(i): 
+        import time
         time.sleep(3)
         print(f"\n>> {i}")
         return i
 
     # Parallel
-    g = None
+    g = unity
     for x in range(5):
         f = F()
         f.i = x
 
-        g = f if g is None else g+f
+        g = g + f
 
     g.run()
    
     print(g.result)
     assert g.result == [*range(5)]
 
+def test_unity(): 
+    @task_
+    def Dummy():pass
+
+    dummy = Dummy()
+
+    assert dummy + unity == dummy
+    assert unity + dummy == dummy
+    assert unity + unity == unity
+
+    assert dummy * unity == dummy
+    assert unity * dummy == dummy
+    assert unity * unity == unity
+
+    unity.run()
+
+    assert unity.result == None
