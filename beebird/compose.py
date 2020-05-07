@@ -16,13 +16,27 @@ import threading
 class Parallel(Task):
     ''' execute tasks in parallel 
     
-        task = Parallel([tA, tB, tC])
+        task = Parallel(tA, tB, tC)
         task.run()  # tA, tB, tC runs in parallel
 
         assert task.result == [ tA.result, tB.result, tC.result ]
     '''
     def __init__(self, *tasks):
         self._tasks = tasks 
+        self.flatten()
+
+    def flatten(self):
+        ''' flatten the nesting parallel tasks '''
+        tasks = []
+        for i in self._tasks:
+            if isinstance(i, Parallel):
+                i.flatten()
+                tasks.extend(i._tasks)
+            else:
+                tasks.append(i)
+                
+        self._tasks = tasks
+
     
 
 @runtask(Parallel)
@@ -60,9 +74,12 @@ class _ParalletJob(Job):
         if self._total > 0:
             with self._cv:
                 for i in tasks:
+                    print(f"submit task {i}")
                     i.run(wait=False)
                 
+                print("waiting all task done...")
                 self._cv.wait()
+                print("done")
 
         return [ t.result for t in tasks ]
 
@@ -74,6 +91,7 @@ class Serial(Task):
     ''' execute tasks in serial '''
     def __init__(self, *tasks):
         self._tasks = tasks
+        self.flatten()
 
     def flatten(self):
         ''' flatten the nesting serial tasks '''

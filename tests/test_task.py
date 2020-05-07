@@ -47,3 +47,46 @@ def test_task_decorator():
         return "Hey!"
 
     assert TaskMan.instance().getTaskByName('Hey') == Hey
+
+
+def test_serial(): 
+    @task_
+    def F(i): 
+        print(f"\n>> {i}")
+        return i
+
+    g = None
+    for x in range(5):
+        f = F()
+        f.i = x
+
+        g = f if g is None else g*f
+
+    g.run()
+   
+    print(g.result)
+    assert g.result == [*range(5)]
+
+
+def test_parallel(): 
+    import time
+
+    @task_
+    def F(i): 
+        time.sleep(3)
+        print(f"\n>> {i}")
+        return i
+
+    # Parallel
+    g = None
+    for x in range(5):
+        f = F()
+        f.i = x
+
+        g = f if g is None else g+f
+
+    g.run()
+   
+    print(g.result)
+    assert g.result == [*range(5)]
+

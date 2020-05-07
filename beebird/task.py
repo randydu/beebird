@@ -217,6 +217,19 @@ class Task(object):
 
         self._callDoneCallbacks()
 
+    # --- Operator overloading ---
+    
+    def __add__(self, tsk):
+        ''' task_a + task_b returns parallel task '''
+        from . import compose
+        return compose.Parallel(self, tsk)
+
+    def __mul__(self, tsk):
+        ''' task_a * task_b returns serial task '''
+        from . import compose
+        return compose.Serial(self, tsk)
+
+
 
 def _task_class(clsTask, public):
     ''' 
