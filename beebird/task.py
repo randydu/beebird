@@ -291,8 +291,23 @@ def _task_func(func, public):
         def Alarm():
             print("Beep!!!")
 
+        @task
+        @def F(a, b): pass
+
         tsk = Alarm()
         tsk.run()
+
+        Different ways to create the task instance：
+
+        f = A()  # f.a = f.b = inspect._empty
+
+        f = A(1) # f.a=1 f.b = inspect._empty
+
+        f = A(1,2) # f.a=1 f.b=2
+        f = A(1, b=2) # f.a=1 f.b=2
+        f = A(a=1, b=2) # f.a=1 f.b=2
+
+        f.run()
     '''
 
     import inspect
@@ -300,7 +315,25 @@ def _task_func(func, public):
     params = inspect.signature(func).parameters
 
     tskName = func.__name__
-    WrapTask = type(tskName, (Task,), { x: params[x].default for x in params })
+
+    def init(self, *args, **kwargs):
+        param_names = [*params]
+        # pass by position
+        for i,v in enumerate(args):
+            try:
+                self.__setattr__(param_names[i], v)
+            except:
+                pass
+        # pass by kv
+        for i in kwargs:
+            if i in param_names:
+                try:
+                    self.__setattr__(i, kwargs[i])
+                except:
+                    pass
+
+
+    WrapTask = type(tskName, (Task,), {**{ x: params[x].default for x in params }, **{ '__init__': init }})
 
     if public:
         TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member

@@ -59,10 +59,7 @@ def test_serial():
 
     g = unity
     for x in range(5):
-        f = F()
-        f.i = x
-
-        g = g*f 
+        g = g*F(x) 
 
     g.run()
    
@@ -82,10 +79,7 @@ def test_parallel():
     # Parallel
     g = unity
     for x in range(5):
-        f = F()
-        f.i = x
-
-        g = g + f
+        g = g + F(x)
 
     g.run()
    
@@ -109,3 +103,26 @@ def test_unity():
     unity.run()
 
     assert unity.result == None
+
+def test_task_init(): 
+    import inspect
+
+    @task_
+    def F(a,b): pass
+
+    f0 = F(1)
+    assert f0.a == 1    
+    assert f0.b == inspect._empty 
+
+
+    f1 = F(1,2)
+    assert f1.a == 1
+    assert f1.b == 2
+
+    f2 = F(a=1,b=2)
+    assert f2.a == 1
+    assert f2.b == 2
+
+    f3 = F(1,b=2)
+    assert f3.a == 1
+    assert f3.b == 2
