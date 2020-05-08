@@ -13,6 +13,17 @@ from beebird.job import runtask, Job
 
 import threading
 
+def _flatten(tasks, cls):
+    ''' flatten the nesting serial/parallel tasks '''
+    result = []
+    for i in tasks:
+        if isinstance(i, cls):
+            result.extend(i._tasks)
+        else:
+            result.append(i)
+
+    return result
+
 class Parallel(Task):
     ''' execute tasks in parallel 
     
@@ -22,21 +33,7 @@ class Parallel(Task):
         assert task.result == [ tA.result, tB.result, tC.result ]
     '''
     def __init__(self, *tasks):
-        self._tasks = tasks 
-        self.flatten()
-
-    def flatten(self):
-        ''' flatten the nesting parallel tasks '''
-        tasks = []
-        for i in self._tasks:
-            if isinstance(i, Parallel):
-                i.flatten()
-                tasks.extend(i._tasks)
-            else:
-                tasks.append(i)
-                
-        self._tasks = tasks
-
+        self._tasks = _flatten(tasks, Parallel) 
     
 
 @runtask(Parallel)
@@ -74,12 +71,12 @@ class _ParalletJob(Job):
         if self._total > 0:
             with self._cv:
                 for i in tasks:
-                    print(f"submit task {i}")
+                   # print(f"submit task {i}")
                     i.run(wait=False)
                 
-                print("waiting all task done...")
+                # print("waiting all task done...")
                 self._cv.wait()
-                print("done")
+                # print("done")
 
         return [ t.result for t in tasks ]
 
@@ -87,23 +84,12 @@ class _ParalletJob(Job):
         
 
 # ----------- Serial -------------
+            
 class Serial(Task):
     ''' execute tasks in serial '''
     def __init__(self, *tasks):
-        self._tasks = tasks
-        self.flatten()
+        self._tasks = _flatten(tasks, Serial)
 
-    def flatten(self):
-        ''' flatten the nesting serial tasks '''
-        tasks = []
-        for i in self._tasks:
-            if isinstance(i, Serial):
-                i.flatten()
-                tasks.extend(i._tasks)
-            else:
-                tasks.append(i)
-                
-        self._tasks = tasks
 
 @runtask(Serial)
 class _SerialJob(Job):

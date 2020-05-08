@@ -50,10 +50,6 @@ def test_serial_flatten():
 
     tsk = compose.Serial(S1(), compose.Serial(S2(), S3()))
     tsk.run()
-    assert tsk.result == [1, [2, 3]]
-
-    tsk.flatten()
-    tsk.run()
 
     assert tsk.result == [1, 2, 3]
 
