@@ -11,6 +11,8 @@ class Dummy:
 def _(task):
     from time import sleep
 
+    print("Dummy >> waiting...")
+
     total = 5
     for i in range(total):
         sleep(1)

@@ -8,7 +8,7 @@ def main():
     
     beebird.importBuiltinTasks()
 
-    print(sys.argv)
+    #print(sys.argv)
 
     parser = argparse.ArgumentParser(prog="beebird", description="Task management and running platform for python 3")
     
@@ -32,14 +32,16 @@ def main():
             v = getattr(o, field)
             parser_task.add_argument(f"--{field}", type=type(v), help="yyy")
 
-        def call_task(args):
-            o = task()
-            for field in fields:
-                setattr(o, field, getattr(args, field))
-            o.run()
-            print(o.result)
+        def wrap_func(tsk, fields):
+            def call_task(args):
+                o = tsk()
+                for field in fields:
+                    setattr(o, field, getattr(args, field))
+                o.run()
+                print(o.result)
+            return call_task
 
-        parser_task.set_defaults(func=call_task)
+        parser_task.set_defaults(func=wrap_func(task, fields))
 
     parser_create = subparsers.add_parser('create', help='create a task')
 
@@ -50,7 +52,6 @@ def main():
 
     #r = parser.parse_args("--command create".split())
     args = parser.parse_args(sys.argv[1:])
-    print(args)
     if hasattr(args, 'func'):
         args.func(args)
 

@@ -105,14 +105,13 @@ def test_unity():
     assert unity.result == None
 
 def test_task_init(): 
-    import inspect
 
     @task_
     def F(a,b): pass
 
     f0 = F(1)
     assert f0.a == 1    
-    assert f0.b == inspect._empty 
+    assert f0.b == None 
 
 
     f1 = F(1,2)

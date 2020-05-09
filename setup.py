@@ -26,6 +26,7 @@ setup(name=package_name,
     author_email= "randydu@gmail.com",
     keywords=["task", "cmdlet"],
     license=__license__,
+    scripts = ["scripts/bee"],
     classifiers=[
     'Development Status :: 2 - Pre-Alpha',
     'Intended Audience :: Developers', 

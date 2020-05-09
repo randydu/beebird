@@ -52,7 +52,7 @@ class TaskMan(object):
         if clsTask in self.tasks:
             raise ValueError(f"class '{clsTask.__name__}' already registered!")
 
-        print(f"registering {clsTask.__name__}\r\n")
+        #print(f"registering {clsTask.__name__}\r\n")
 
         self.tasks.append(clsTask)
 
