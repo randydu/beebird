@@ -30,7 +30,15 @@ def main():
         fields = o.getFields()
         for field in fields:
             v = getattr(o, field)
-            parser_task.add_argument(f"--{field}", type=type(v), help="yyy")
+            if isinstance(v, beebird.task.Empty):
+                # no default value
+                if v.annotation:
+                    parser_task.add_argument(field, type=v.annotation, help="yyy")
+                else:
+                    parser_task.add_argument(field, help="yyy")
+            else:
+                # has default value
+                parser_task.add_argument(f"--{field}", type=type(v), help="yyy")
 
         def wrap_func(tsk, fields):
             def call_task(args):
@@ -38,7 +46,7 @@ def main():
                 for field in fields:
                     setattr(o, field, getattr(args, field))
                 o.run()
-                print(o.result)
+               # print(o.result)
             return call_task
 
         parser_task.set_defaults(func=wrap_func(task, fields))

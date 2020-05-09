@@ -105,13 +105,14 @@ def test_unity():
     assert unity.result == None
 
 def test_task_init(): 
-
+    import beebird.task
+    
     @task_
     def F(a,b): pass
 
     f0 = F(1)
     assert f0.a == 1    
-    assert f0.b == None 
+    assert f0.b == beebird.task.empty 
 
 
     f1 = F(1,2)

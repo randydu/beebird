@@ -295,6 +295,15 @@ def _task_class(clsTask, public):
     else:
         return WrapTask
 
+class Empty(object):
+    """ empty default value, with optional annotation """
+    def __init__(self, annotation = None):
+        super().__init__()
+        self.annotation = annotation
+
+""" empty default value without any annotation """
+empty = Empty()
+
 def _task_func(func, public):
     ''' @task decorating function 
     
@@ -348,12 +357,14 @@ def _task_func(func, public):
     fields = {}
     for x in params:
         v = params[x].default
+
         if v == inspect._empty:
+            v = empty
+
             clsX = params[x].annotation
             if clsX != inspect._empty:
-                v = clsX()
-            else:
-                v = None
+                v = Empty(clsX)
+
         fields = {**fields, x:v}
 
 
