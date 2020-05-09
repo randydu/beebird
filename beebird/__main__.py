@@ -27,7 +27,7 @@ def main():
         parser_task = subparsers_run.add_parser(task.__name__, help=f"task {task.__name__}'s help")
 
         o = task()
-        fields = task.getFields()
+        fields = o.getFields()
         for field in fields:
             v = getattr(o, field)
             parser_task.add_argument(f"--{field}", type=type(v), help="yyy")

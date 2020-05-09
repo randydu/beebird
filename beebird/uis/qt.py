@@ -110,9 +110,7 @@ def createTask(clsname):
     obj = clsTask()
 
     # both class and object fields are needed to create a task
-    cls_fields = [ x for x in dir(clsTask) if not x.startswith('_') and  type(getattr(clsTask, x)).__name__ not in ('function', 'method', 'property', 'EnumMeta')]
-    obj_fields = [x for x in obj.__dict__ if not x.startswith('_')]
-    fields = {*cls_fields, *obj_fields}
+    fields = obj.getFields()
     # 
     _TaskUIQt().create(obj, fields)
 

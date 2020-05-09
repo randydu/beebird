@@ -130,14 +130,12 @@ class Task(object):
     def getMetaInfo(cls):
         return cls._metaInfo_
 
-    @classmethod
-    def getFields(cls):
+    def getFields(self):
         ''' deduce task fields '''
-        obj = cls()
-
         # both class and object fields are needed to create a task
+        cls = type(self)
         cls_fields = [ x for x in dir(cls) if not x.startswith('_') and  type(getattr(cls, x)).__name__ not in ('function', 'method', 'property', 'EnumMeta')]
-        obj_fields = [x for x in obj.__dict__ if not x.startswith('_')]
+        obj_fields = [x for x in self.__dict__ if not x.startswith('_')]
         return {*cls_fields, *obj_fields}
 
     @property
