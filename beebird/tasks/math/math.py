@@ -1,5 +1,6 @@
 from beebird.task import task
 
 @task
-def add(a, b):
+def Add(a:float, b:float):
+    print('a: ',a, 'b: ',b)
     return a + b

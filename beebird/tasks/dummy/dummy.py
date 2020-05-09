@@ -3,11 +3,11 @@ from beebird.task import task
 from beebird.job import job
 
 @task
-class DummyTask:
+class Dummy:
     ''' dummy task for test '''
     pass
 
-@job(DummyTask)
+@job(Dummy)
 def _(task):
     from time import sleep
 

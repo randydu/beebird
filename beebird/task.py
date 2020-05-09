@@ -64,6 +64,11 @@ class TaskMan(object):
 
         raise ValueError(f"task class name '{name}' not found")
 
+    def getAllTasks(self):
+        ''' get all registered task classes '''
+        return self.tasks
+
+
 class Task(object):
     """ Basic unit of job """
     class Status(IntEnum):
@@ -124,6 +129,16 @@ class Task(object):
     @classmethod
     def getMetaInfo(cls):
         return cls._metaInfo_
+
+    @classmethod
+    def getFields(cls):
+        ''' deduce task fields '''
+        obj = cls()
+
+        # both class and object fields are needed to create a task
+        cls_fields = [ x for x in dir(cls) if not x.startswith('_') and  type(getattr(cls, x)).__name__ not in ('function', 'method', 'property', 'EnumMeta')]
+        obj_fields = [x for x in obj.__dict__ if not x.startswith('_')]
+        return {*cls_fields, *obj_fields}
 
     @property
     def status(self):
@@ -332,8 +347,19 @@ def _task_func(func, public):
                 except:
                     pass
 
+    fields = {}
+    for x in params:
+        v = params[x].default
+        if v == inspect._empty:
+            clsX = params[x].annotation
+            if clsX != inspect._empty:
+                v = clsX()
+            else:
+                v = None
+        fields = {**fields, x:v}
 
-    WrapTask = type(tskName, (Task,), {**{ x: params[x].default for x in params }, **{ '__init__': init }})
+
+    WrapTask = type(tskName, (Task,), {**fields, **{ '__init__': init }})
 
     if public:
         TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member
