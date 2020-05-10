@@ -3,7 +3,12 @@ from beebird.job import job
 
 @task
 class Hello:
-    ''' dummy task for test '''
+    ''' Classical Hello World 
+    
+        Parameter:
+
+          who: whom to say hello
+    '''
     who = "World"
 
 @job(Hello)

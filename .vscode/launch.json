@@ -6,10 +6,10 @@
     "configurations": [
         
         {
-            "name": "Python: Dummy Task",
+            "name": "Python: Hello Task",
             "type": "python",
             "request": "launch",
-            "args": ["run","Dummy"],
+            "args": ["run","Hello"],
             "program": "${file}",
             "console": "integratedTerminal"
         }

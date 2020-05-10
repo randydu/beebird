@@ -282,6 +282,7 @@ def _task_class(clsTask, public):
     # simulate the name of input class
     WrapTask.__name__ = clsTask.__name__
     WrapTask.__qualname__ = clsTask.__qualname__
+    WrapTask.__doc__ = clsTask.__doc__
 
     # if the class object is callable then we assume it is the default Job class to deal with this task.
     # it can be modified by @runtask (in job module)
@@ -368,7 +369,7 @@ def _task_func(func, public):
         fields = {**fields, x:v}
 
 
-    WrapTask = type(tskName, (Task,), {**fields, **{ '__init__': init }})
+    WrapTask = type(tskName, (Task,), {**fields, **{ '__init__': init, '__doc__': func.__doc__ }})
 
     if public:
         TaskMan.instance().registerTask(json_serialize(WrapTask)) # pylint: disable= no-member

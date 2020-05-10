@@ -5,8 +5,7 @@ def file(filename:str):
     ''' run a task file '''
     try:
         tsk = Task.loadFromFile(filename)
-        tsk.run()
-        print("Result >> ", tsk.result)
+        return tsk.run()
     except Exception as ex:
         print(ex)
 

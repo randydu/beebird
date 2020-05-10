@@ -24,7 +24,7 @@ def main():
     # adds all registered tasks
     tasks = beebird.task.TaskMan.instance().getAllTasks()
     for task in tasks:
-        parser_task = subparsers_run.add_parser(task.__name__, help=f"task {task.__name__}'s help")
+        parser_task = subparsers_run.add_parser(task.__name__, help=task.__doc__)
 
         o = task()
         fields = o.getFields()
@@ -38,15 +38,14 @@ def main():
                     parser_task.add_argument(field, help="yyy")
             else:
                 # has default value
-                parser_task.add_argument(f"--{field}", type=type(v), help="yyy")
+                parser_task.add_argument(f"--{field}", type=type(v), default=v, help="yyy")
 
         def wrap_func(tsk, fields):
             def call_task(args):
                 o = tsk()
                 for field in fields:
                     setattr(o, field, getattr(args, field))
-                o.run()
-               # print(o.result)
+                print("Result >> ", o.run())
             return call_task
 
         parser_task.set_defaults(func=wrap_func(task, fields))
@@ -62,6 +61,8 @@ def main():
     args = parser.parse_args(sys.argv[1:])
     if hasattr(args, 'func'):
         args.func(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__": 
