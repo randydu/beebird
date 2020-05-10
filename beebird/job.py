@@ -29,7 +29,6 @@ class Job:
         return self._future.result() if wait else None 
 
     def _cbDone(self, ft): 
-        print("_cbDone: " + self._task.__class__.__name__)
         try:
             self._task.onSuccess(ft.result())
         except futures.CancelledError:

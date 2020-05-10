@@ -209,7 +209,7 @@ class Task(object):
 
     def onSuccess(self, result):
         ''' called when task is done successfully '''
-        self.ErrorCode = Task.ErrorCode.SUCCESS
+        self._ec = Task.ErrorCode.SUCCESS
         self._status = Task.Status.DONE
         self._result = result
 
@@ -217,7 +217,7 @@ class Task(object):
 
     def onError(self, err):
         ''' called when task is done with exception /error '''
-        self.ErrorCode = Task.ErrorCode.ERROR
+        self._ec = Task.ErrorCode.ERROR
         self._error = err
         self._status = Task.Status.DONE
 
@@ -225,7 +225,7 @@ class Task(object):
 
     def onCancelled(self): 
         ''' called when task is cancelled '''
-        self.ErrorCode = Task.ErrorCode.CANCELLED
+        self._ec = Task.ErrorCode.CANCELLED
         self._status = Task.Status.DONE
 
         self._callDoneCallbacks()
