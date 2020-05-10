@@ -1,6 +1,6 @@
 from beebird import compose
 
-from beebird.task import task, task_ as ptask 
+from beebird.task import Task, task, task_ as ptask 
 
 def test_parallel():
 
@@ -17,6 +17,7 @@ def test_parallel():
     tsk.run()
 
     assert tsk.result == [1, 2, 3]
+    assert tsk.errcode == Task.ErrorCode.SUCCESS
 
 def test_serial():
 
@@ -33,6 +34,7 @@ def test_serial():
     tsk.run()
 
     assert tsk.result == [1, 2, 3]
+    assert tsk.errcode == Task.ErrorCode.SUCCESS
 
 def test_serial_flatten():
 
@@ -52,6 +54,7 @@ def test_serial_flatten():
     tsk.run()
 
     assert tsk.result == [1, 2, 3]
+    assert tsk.errcode == Task.ErrorCode.SUCCESS
 
 
 
@@ -72,3 +75,4 @@ def test_mixed():
     tsk.run()
 
     assert tsk.result == ['ms1', ['mp1', 'mp2'], 'ms2']
+    assert tsk.errcode == Task.ErrorCode.SUCCESS

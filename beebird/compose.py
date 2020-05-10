@@ -34,6 +34,8 @@ class Parallel(Task):
     '''
     def __init__(self, *tasks):
         self._tasks = _flatten(tasks, Parallel) 
+
+
     
 
 @runtask(Parallel)
@@ -52,6 +54,10 @@ class _ParalletJob(Job):
             self._count -= 1
 
             self._task.progress = 1 - self._count / self._total
+
+            # set error code if any task fails.
+            #if task.errcode != Task.ErrorCode.SUCCESS:
+            #    self._task._ec = task.errcode
 
             if self._count == 0:
                 self._cv.notify()

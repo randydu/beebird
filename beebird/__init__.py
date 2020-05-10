@@ -25,3 +25,5 @@ def importBuiltinTasks():
         the tasks/__init__.py will dynamically import all sub-packages
     '''
     from . import tasks
+
+from .__main__ import main
