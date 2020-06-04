@@ -322,9 +322,9 @@ def _task_func(func, public):
 
         Different ways to create the task instance：
 
-        f = A()  # f.a = f.b = inspect._empty
+        f = A()  # f.a = f.b = inspect.Signature.empty
 
-        f = A(1) # f.a=1 f.b = inspect._empty
+        f = A(1) # f.a=1 f.b = inspect.Signature.empty
 
         f = A(1,2) # f.a=1 f.b=2
         f = A(1, b=2) # f.a=1 f.b=2
@@ -359,11 +359,11 @@ def _task_func(func, public):
     for x in params:
         v = params[x].default
 
-        if v == inspect._empty:
+        if v == inspect.Signature.empty:
             v = empty
 
             clsX = params[x].annotation
-            if clsX != inspect._empty:
+            if clsX != inspect.Signature.empty:
                 v = Empty(clsX)
 
         fields = {**fields, x:v}
