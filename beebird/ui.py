@@ -4,7 +4,6 @@ from .task import Task
 
 
 
-
 class TaskUI(object):
     _task: Task = None
 

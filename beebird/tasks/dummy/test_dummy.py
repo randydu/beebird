@@ -1,12 +1,15 @@
-from . import dummy
+''' test dummy task '''
+
+from .dummy import Dummy
 
 
 def test_dummy():
-    tsk = dummy.Dummy()
-    jstr = tsk.to_json()
+    ''' test running dummy task '''
+    tsk = Dummy()
+    jstr = tsk.to_json() # pylint: disable=no-member
     print(jstr)
-    
-    tsk1 = dummy.Dummy.from_json(jstr)
-    
+
+    tsk1 = Dummy.from_json(jstr) # pylint: disable=no-member
+
     tsk1.run()
-    assert tsk1.status == dummy.Dummy.Status.DONE
+    assert tsk1.status == Dummy.Status.DONE # pylint: disable=no-member

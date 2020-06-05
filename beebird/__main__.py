@@ -1,61 +1,69 @@
+''' module entry '''
+
 import sys
 import argparse
 
 import beebird
 import beebird.task
 
+
 def main():
-    
-    beebird.importBuiltinTasks()
+    ''' entrypoint of beebird console '''
+    beebird.import_builtin_tasks()
 
-    #print(sys.argv)
+    # print(sys.argv)
 
-    parser = argparse.ArgumentParser(prog="beebird", description="Task management and running platform for python 3")
-    
+    parser = argparse.ArgumentParser(
+        prog="beebird", description="Task management and running platform for python 3")
+
     # disable argparser's default sys.exit() behavior since we are running in a thread.
     #parser.exit = lambda *args: 0
 
-    parser.add_argument('--version', action="version", version = f"beebird v{beebird.__version__}")
+    parser.add_argument('--version', action="version",
+                        version=f"beebird v{beebird.__version__}")
 
     subparsers = parser.add_subparsers(help='sub-command help')
-    
+
     parser_run = subparsers.add_parser('run', help='execute task')
     subparsers_run = parser_run.add_subparsers(help='registered tasks')
     # adds all registered tasks
-    tasks = beebird.task.TaskMan.instance().getAllTasks()
+    tasks = beebird.task.TaskMan().getAllTasks()
     for task in tasks:
-        parser_task = subparsers_run.add_parser(task.__name__, help=task.__doc__)
+        parser_task = subparsers_run.add_parser(
+            task.__name__, help=task.__doc__)
 
-        o = task()
-        fields = o.getFields()
+        tsk = task()
+        fields = tsk.getFields()
         for field in fields:
-            v = getattr(o, field)
-            if isinstance(v, beebird.task.Empty):
+            val = getattr(tsk, field)
+            if isinstance(val, beebird.task.Empty):
                 # no default value
-                if v.annotation:
-                    parser_task.add_argument(field, type=v.annotation, help="yyy")
+                if val.annotation:
+                    parser_task.add_argument(
+                        field, type=val.annotation, help="yyy")
                 else:
                     parser_task.add_argument(field, help="yyy")
             else:
                 # has default value
-                parser_task.add_argument(f"--{field}", type=type(v), default=v, help="yyy")
+                parser_task.add_argument(
+                    f"--{field}", type=type(val), default=val, help="yyy")
 
         def wrap_func(tsk, fields):
             def call_task(args):
-                o = tsk()
+                tsk_ = tsk()
                 for field in fields:
-                    setattr(o, field, getattr(args, field))
-                print("Result >> ", o.run())
+                    setattr(tsk_, field, getattr(args, field))
+                print("Result >> ", tsk_.run())
             return call_task
 
         parser_task.set_defaults(func=wrap_func(task, fields))
 
-    parser_create = subparsers.add_parser('create', help='create a task')
+    subparsers.add_parser('create', help='create a task')
 
-    parser_config = subparsers.add_parser('config', help='configuration beebird')
+    subparsers.add_parser(
+        'config', help='configuration beebird')
 
-    parser_shell = subparsers.add_parser('shell', help='run task in a shell')
-
+    subparsers.add_parser('shell', help='run task in a shell')
 
     #r = parser.parse_args("--command create".split())
     args = parser.parse_args(sys.argv[1:])
@@ -65,5 +73,5 @@ def main():
         parser.print_help()
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     sys.exit(main())

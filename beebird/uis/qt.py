@@ -1,120 +1,121 @@
 """ Qt based TaskUI implementation """
 
+import sys
+import threading
 
-from beebird.task import Task, TaskMan
 
-from ..ui import TaskUI
-
-from PyQt5 import QtGui
-
-from PyQt5.QtWidgets import QMainWindow, QWidget, QProgressBar, QLabel, QTextEdit,QDialog, QDialogButtonBox, QGridLayout, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QWidget, QProgressBar, QLabel, \
+    QTextEdit, QDialog, QDialogButtonBox, QGridLayout, QVBoxLayout
 from PyQt5.QtWidgets import QApplication
 
+from beebird.task import Task, TaskMan
+from ..ui import TaskUI
+
+#from PyQt5 import QtGui
+
+
+
 class _TaskUIQt(TaskUI):
-    def __init__(self, task = None):
+    def __init__(self, task=None):
         super().__init__(task)
+        self.timer = None
 
     def run(self):
-        import sys
-        import threading
 
         app = QApplication(sys.argv)
 
-        uiMain = QMainWindow()
-        taskName = 'dummy'
-        uiMain.setWindowTitle(f"QBackup: [{taskName}]")
+        ui_main = QMainWindow()
+        task_name = 'dummy'
+        ui_main.setWindowTitle(f"QBackup: [{task_name}]")
 
-        taskGauge = QProgressBar(uiMain)
+        task_gauge = QProgressBar(ui_main)
 
         if self._task.isProgressAvailable():
-            taskGauge.setRange(0,100)
-            taskGauge.setValue(0)
+            task_gauge.setRange(0, 100)
+            task_gauge.setValue(0)
         else:
-            taskGauge.setRange(0,0)
+            task_gauge.setRange(0, 0)
 
-        uiMain.setCentralWidget(taskGauge)        
+        ui_main.setCentralWidget(task_gauge)
 
-        statusBar = uiMain.statusBar()
+        status_bar = ui_main.status_bar()
 
-        uiMain.setGeometry(300, 300, 350, 50)
-        uiMain.show()
+        ui_main.setGeometry(300, 300, 350, 50)
+        ui_main.show()
 
-        self._task.run(wait = False)
-        statusBar.showMessage('running...')
+        self._task.run(wait=False)
+        status_bar.showMessage('running...')
 
         def task_monitor():
             if self._task.isProgressAvailable():
-                taskGauge.setValue(self._task.progress*100)
+                task_gauge.setValue(self._task.progress*100)
 
             if self._task.status != Task.Status.DONE:
                 self.timer = threading.Timer(1, task_monitor)
                 self.timer.start()
             else:
-                statusBar.showMessage('done')
+                status_bar.showMessage('done')
 
         self.timer = threading.Timer(1, task_monitor)
         self.timer.start()
 
         app.exec_()
 
-    def create(self, obj, fields):
+    @staticmethod
+    def create(obj, fields):
         ''' create a task object with fields '''
-        import sys
 
-        app = QApplication(sys.argv) # pylint: disable= unused-variable
+        app = QApplication(sys.argv)  # pylint: disable= unused-variable
 
         dlg = QDialog()
-        taskName = type(obj).__name__
-        dlg.setWindowTitle(f"QBackup: [{taskName}]")
+        task_name = type(obj).__name__
+        dlg.setWindowTitle(f"QBackup: [{task_name}]")
 
         # field editor
         layout = QGridLayout()
 
         j = 0
         for i in fields:
-            layout.addWidget(QLabel(i), j,0)
-            # TODO: inspect field type and uses appropriate widget
-            layout.addWidget(QTextEdit(str(getattr(obj, i))), j,1)
+            layout.addWidget(QLabel(i), j, 0)
+            # inspect field type and uses appropriate widget
+            layout.addWidget(QTextEdit(str(getattr(obj, i))), j, 1)
             j += 1
 
-
-        uiFields = QWidget()
-        uiFields.setLayout(layout)
+        ui_fields = QWidget()
+        ui_fields.setLayout(layout)
 
         # dialog layout
         layout = QVBoxLayout()
-        layout.addWidget(uiFields)
+        layout.addWidget(ui_fields)
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        buttonBox = QDialogButtonBox(QBtn)
-        buttonBox.accepted.connect(dlg.accept)
-        buttonBox.rejected.connect(dlg.reject)
+        qbtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        btn_box = QDialogButtonBox(qbtn)
+        btn_box.accepted.connect(dlg.accept)
+        btn_box.rejected.connect(dlg.reject)
 
-        layout.addWidget(buttonBox)
+        layout.addWidget(btn_box)
         dlg.setLayout(layout)
 
         dlg.setGeometry(300, 300, 350, 200)
         dlg.exec_()
 
 
-
 def run(task):
     ''' run a task '''
     _TaskUIQt(task).run()
 
-def createTask(clsname):
-    ''' create a task by name '''
-    import py_json_serialize
 
-    clsTask = TaskMan.instance().getTaskByName(clsname)
-    obj = clsTask()
+def create_task(clsname):
+    ''' create a task by name '''
+
+    cls = TaskMan().getTaskByName(clsname)
+    obj = cls()
 
     # both class and object fields are needed to create a task
     fields = obj.getFields()
-    # 
+    #
     _TaskUIQt().create(obj, fields)
 
 
-def editTask(task):
+def edit_task(task): # pylint: disable=unused-argument
     ''' create a task '''
-    pass

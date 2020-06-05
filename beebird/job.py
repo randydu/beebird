@@ -1,56 +1,64 @@
-''' 
+'''
   Job: task is doc, job is to run / control a task at runtime.
 
-''' 
-
-from . import runner
+'''
 
 from concurrent import futures
 
+from . import runner
+
+
 class Job:
+    ''' Unit to execute a task '''
     def __init__(self, task):
         self._task = task
         self._future = None
 
     def __call__(self):
-        ''' job being executed 
-        
+        ''' job being executed
+
             sub-class must call super().__call__(self) first
         '''
         self._task.onRunning()
-    
+
     def cancel(self):
+        ''' cancel a job '''
         return self._future.cancel()
 
-    def execute(self, wait = True):
+    def execute(self, wait=True):
+        ''' starts job execution '''
         self._task.onSubmitted()
-        self._future = runner.submitJob(self)
-        self._future.add_done_callback(self._cbDone)
-        return self._future.result() if wait else None 
+        self._future = runner.submit_job(self)
+        self._future.add_done_callback(self._callback_done)
+        return self._future.result() if wait else None
 
-    def _cbDone(self, ft): 
+    def _callback_done(self, future):
+        ''' callback when job is done '''
         try:
-            self._task.onSuccess(ft.result())
+            self._task.onSuccess(future.result())
         except futures.CancelledError:
             self._task.onCancelled()
-        except Exception as e:
-            self._task.onError(e)
+        except Exception as ex: # pylint: disable=broad-except
+            self._task.onError(ex)
 
 
 class _CallableTaskJob(Job):
-    ''' Job to deal with callable task 
-        
-        It is the default job class if no other Job class is specified for a task class via @runtask
+    ''' Job to deal with callable task
+
+        It is the default job class if no other Job class is specified for
+        a task class via @runtask
     '''
+
     def __call__(self):
         super().__call__()
         return self._task()
-    
-class runtask(object):
-    """ class decorator to specify which task type to associate 
-    
-    ex:  
-         
+
+
+class runtask: # pylint: disable=(invalid-name, too-few-public-methods)
+    """ class decorator to specify which task type to associate
+
+    ex:
+
          @runtask(MultiFilesCopy)
          @runtask(SingleFileCopy)
          class FileCopyJob(Job):
@@ -58,30 +66,31 @@ class runtask(object):
                  pass
 
     """
-    def __init__(self, clsTask):
-        self._clsTask = clsTask
 
-    def __call__(self, clsJob):
-        self._clsTask.setJobClass(clsJob)
-        return clsJob
+    def __init__(self, cls_task):
+        self._cls_task = cls_task
+
+    def __call__(self, cls_job):
+        self._cls_task.setJobClass(cls_job)
+        return cls_job
 
 
-def job(clsTask):
-    """ function decorator to turn a function into a job class 
-    
-    @job(clsTask)
+def job(cls_task):
+    """ function decorator to turn a function into a job class
+
+    @job(cls_task)
     def upload(task):
         ...
-    
+
     """
-    
-    def toDecorate(f):
+
+    def wrapper(func):
         class WrapJob(Job):
+            ''' job class to run task via decorated function '''
             def __call__(self):
                 super().__call__()
-                f(self._task)
-    
-        clsTask.setJobClass(WrapJob)
+                func(self._task)
 
+        cls_task.setJobClass(WrapJob)
 
-    return toDecorate
+    return wrapper

@@ -1,7 +1,10 @@
+''' math test task '''
+
 from beebird.task import task
 
+
 @task
-def Add(a:int, b:int = 1):
+def add(a: int, b: int = 1): # pylint: disable=invalid-name
     """ Adds number a and b """
-    print('a: ',a, 'b: ',b)
+    print('a: ', a, 'b: ', b)
     return a + b

@@ -4,4 +4,4 @@ import pathlib
 
 import beebird
 
-beebird.importTasks(pathlib.Path(__file__).parent, __name__)
+beebird.import_tasks(pathlib.Path(__file__).parent, __name__)
