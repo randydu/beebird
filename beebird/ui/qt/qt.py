@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QProgressBar, QLabel, \
 from PyQt5.QtWidgets import QApplication
 
 from beebird.task import Task, TaskMan
-from ..ui import TaskUI
+from beebird.ui import TaskUI
 
 #from PyQt5 import QtGui
 
@@ -21,6 +21,7 @@ class _TaskUIQt(TaskUI):
         self.timer = None
 
     def run(self):
+        ''' run task in Qt GUI'''
 
         app = QApplication(sys.argv)
 
@@ -108,11 +109,11 @@ def run(task):
 def create_task(clsname):
     ''' create a task by name '''
 
-    cls = TaskMan().getTaskByName(clsname)
+    cls = TaskMan().find(clsname)
     obj = cls()
 
     # both class and object fields are needed to create a task
-    fields = obj.getFields()
+    fields = obj.get_fields()
     #
     _TaskUIQt().create(obj, fields)
 

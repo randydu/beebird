@@ -4,9 +4,9 @@
 
 import threading
 
-from ..ui import TaskUI
+from beebird.ui import TaskUI
 
-from ..task import Task
+from beebird.task import Task
 
 # Print iterations progress
 
@@ -48,6 +48,7 @@ class _TaskUIConsole(TaskUI):
         print_progress_bar(self._task.progress*100, 100, prefix=task_name)
 
     def run(self):
+        ''' start running task in console mode '''
 
         lck = threading.Lock()
         lck.acquire()

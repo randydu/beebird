@@ -11,8 +11,8 @@
 import threading
 
 from beebird.task import Task
-from beebird.job import runtask, Job
-
+from beebird.job import Job
+from beebird.decorators import runtask
 
 def _flatten(tasks, cls):
     ''' flatten the nesting serial/parallel tasks '''
@@ -65,7 +65,7 @@ class _ParalletJob(Job):
         tasks = self._task._tasks
 
         for i in tasks:
-            i.addDoneCallback(self.task_done_callback)
+            i.add_done_callback(self.task_done_callback)
             self._count += 1
 
         self._total = self._count
@@ -114,3 +114,61 @@ class _SerialJob(Job):
                 self._task.progress = count / total
 
         return [t.result for t in tasks]
+
+
+
+
+# ----- Unity task ------
+
+class _Unity(Task):
+    ''' unity task does nothing itself but plays the role of 0 and 1
+    in task composition:
+
+        unity + task = task
+        task + unity = task
+
+        unity * task = task
+        task * unity = task
+    '''
+
+    def run(self, wait=True):
+        ''' do nothing '''
+
+    def __add__(self, tsk):
+        ''' unity + task returns task '''
+        return tsk
+
+    def __mul__(self, tsk):
+        ''' unity * task returns task '''
+        return tsk
+
+
+unity = _Unity()
+
+# --- Task Operator overloading ---
+
+def _add_task(self, tsk):
+    ''' task_a + task_b returns parallel task
+
+        task + unity = task
+        unity + task = task
+    '''
+
+    if id(tsk) == id(unity):
+        return self
+
+    return Parallel(self, tsk)
+
+def _mul_task(self, tsk):
+    ''' task_a * task_b returns serial task
+
+        task + unity = task
+        unity + task = task
+    '''
+    if tsk is unity:
+        return self
+
+    return Serial(self, tsk)
+
+Task.__add__ = _add_task
+Task.__mul__ = _mul_task

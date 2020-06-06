@@ -2,14 +2,18 @@
 
 import sys
 
-import beebird
+import beebird.utils
+
+#from . import qt
+
 
 def main(*argv):
     ''' entry of GUI mode '''
     print("GUI >>", *argv)
 
-    beebird.import_builtin_tasks()
-    beebird.task.run(gui=True)
+    beebird.utils.import_builtin_tasks()
+
+    #qt.run(task)
 
 
 if __name__ == "__main__":

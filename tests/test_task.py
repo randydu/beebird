@@ -1,4 +1,6 @@
-from beebird.task import Task, task_, task, TaskMan, unity
+from beebird.task import Task, TaskMan 
+from beebird.decorators import task, task_
+from beebird.compose import unity
 
 def test_task_create():
     tsk = Task()
@@ -16,7 +18,7 @@ def test_task_decorator():
 
     with pytest.raises(Exception):
         # cannot resolve task by name for a private task
-        TaskMan.instance().getTaskByName('SayHello')
+        TaskMan.instance().find('SayHello')
 
     assert SayHello().run() == "Hello!"
 
@@ -28,7 +30,7 @@ def test_task_decorator():
     
     with pytest.raises(Exception):
         # cannot resolve task by name for a private task
-        TaskMan.instance().getTaskByName('SayHello')
+        TaskMan.instance().find('SayHello')
 
     assert SayHello().run() == "Hello!"
     
@@ -39,14 +41,14 @@ def test_task_decorator():
         def __call__(self):
             return "Hello!"
 
-    assert TaskMan.instance().getTaskByName('SayHello') == SayHello
+    assert TaskMan.instance().find('SayHello') == SayHello
 
     # public task function
     @task
     def Hey(object):
         return "Hey!"
 
-    assert TaskMan.instance().getTaskByName('Hey') == Hey
+    assert TaskMan.instance().find('Hey') == Hey
 
 
 def test_serial(): 
@@ -112,7 +114,7 @@ def test_task_init():
 
     f0 = F(1)
     assert f0.a == 1    
-    assert f0.b == beebird.task.empty 
+    assert f0.b == beebird.decorators.empty 
 
 
     f1 = F(1,2)

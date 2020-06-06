@@ -1,7 +1,6 @@
 ''' Hello task '''
 
-from beebird.task import task
-from beebird.job import job
+from beebird.decorators import task, job
 
 
 @task

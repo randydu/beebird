@@ -1,10 +1,8 @@
 ''' test QT5 based GUI '''
 
-import beebird
-from . import qt
+from beebird.ui import qt
 
-
-beebird.import_builtin_tasks()
+from . import samples
 
 
 def test_qt_create():

@@ -1,15 +1,14 @@
 ''' CLI mode '''
 
 import sys
-import beebird
+import beebird.utils
 
 
 def main(*argv):
     ''' entry point of bee in CLI mode '''
     print("CLI >>", *argv)
 
-    beebird.import_builtin_tasks()
-    beebird.task.run(gui=False)
+    beebird.utils.import_builtin_tasks()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,3 @@
 # beebird
 
-Task running platform for Python 3.
+Task Manangement for Python 3.

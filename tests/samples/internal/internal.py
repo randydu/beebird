@@ -1,6 +1,7 @@
 ''' internal tasks '''
 
-from beebird.task import task, Task
+from beebird.task import Task
+from beebird.decorators import task
 
 
 @task

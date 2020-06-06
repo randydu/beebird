@@ -1,0 +1,2 @@
+py-singleton
+py-json-serialize

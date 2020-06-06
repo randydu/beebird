@@ -1,6 +1,7 @@
 from beebird import compose
 
-from beebird.task import Task, task, task_ as ptask 
+from beebird.task import Task
+from beebird.decorators import task, task_ as ptask 
 
 def test_parallel():
 

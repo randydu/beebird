@@ -5,11 +5,13 @@ import argparse
 
 import beebird
 import beebird.task
+import beebird.decorators
+import beebird.utils
 
 
 def main():
     ''' entrypoint of beebird console '''
-    beebird.import_builtin_tasks()
+    beebird.utils.import_builtin_tasks()
 
     # print(sys.argv)
 
@@ -27,16 +29,16 @@ def main():
     parser_run = subparsers.add_parser('run', help='execute task')
     subparsers_run = parser_run.add_subparsers(help='registered tasks')
     # adds all registered tasks
-    tasks = beebird.task.TaskMan().getAllTasks()
+    tasks = beebird.task.TaskMan().all()
     for task in tasks:
         parser_task = subparsers_run.add_parser(
             task.__name__, help=task.__doc__)
 
         tsk = task()
-        fields = tsk.getFields()
+        fields = tsk.get_fields()
         for field in fields:
             val = getattr(tsk, field)
-            if isinstance(val, beebird.task.Empty):
+            if isinstance(val, beebird.decorators.Empty):
                 # no default value
                 if val.annotation:
                     parser_task.add_argument(

@@ -1,4 +1,3 @@
-''' built-in tasks '''
 
 # imports all tasks in this folder
 import pathlib

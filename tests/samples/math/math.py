@@ -1,6 +1,6 @@
 ''' math test task '''
 
-from beebird.task import task
+from beebird.decorators import task
 
 
 @task
