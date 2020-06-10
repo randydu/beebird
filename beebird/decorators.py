@@ -1,6 +1,5 @@
 ''' task related decorators '''
 import inspect
-import functools
 
 from py_json_serialize import json_serialize
 
