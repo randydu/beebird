@@ -1,3 +1,5 @@
+import pytest
+
 from beebird.task import Task, TaskMan 
 from beebird.decorators import task, task_
 from beebird.compose import unity
@@ -8,7 +10,6 @@ def test_task_create():
 
 
 def test_task_decorator(): 
-    import pytest
 
     # private task class
     @task_

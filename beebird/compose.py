@@ -316,7 +316,7 @@ class _BucketJob(Job):
 
                 self._task.progress = self._count / self._total
 
-                if bkt.total == 0:  # empty, done.
+                if self._total == self._count:  # empty, done.
                     break
 
                 tasks = bkt.find_leaf_tasks()
