@@ -9,7 +9,8 @@ from py_singleton import singleton
 
 from . import job
 
-class Group: # pylint: disable=too-few-public-methods
+
+class Group:  # pylint: disable=too-few-public-methods
     ''' task group '''
 
     def __init__(self, name):
@@ -17,7 +18,7 @@ class Group: # pylint: disable=too-few-public-methods
 
 
 @singleton
-class GroupMan: # pylint: disable=too-few-public-methods
+class GroupMan:  # pylint: disable=too-few-public-methods
     ''' group manager '''
 
     def __init__(self):
@@ -37,7 +38,7 @@ class GroupMan: # pylint: disable=too-few-public-methods
         return grp
 
 
-class MetaInfo: # pylint: disable=too-few-public-methods
+class MetaInfo:  # pylint: disable=too-few-public-methods
     ''' task meta-info '''
     name = ""  # task name
     group = None
@@ -77,8 +78,9 @@ class TaskMan:
         return self.tasks
 
 
-class Task:
-    """ Basic unit of job """
+class Task: # pylint: disable=too-many-public-methods
+    """ Base of all tasks """
+
     class Status(IntEnum):
         """ Task status """
         INIT = 0  # task is inited, not submitted yet
@@ -90,8 +92,9 @@ class Task:
         ''' Task's error code '''
         INVALID = 0  # empty / invalid code
         SUCCESS = 1  # no error
-        CANCELLED = 2  # cancelled
-        ERROR = 3  # error occurs
+        CANCELLED = 2  # cancelled before executing
+        STOPPED = 3  # stopped while executing (via job::stop)
+        ERROR = 4  # runtime error occurs
 
     _cls_job_ = None  # job class to execute the task
     _metaInfo_ = None  # task meta-info
@@ -159,9 +162,34 @@ class Task:
         return self._status
 
     @property
-    def errcode(self):
+    def error_code(self):
         ''' task's error code '''
         return self._ec
+
+    @property
+    def error(self):
+        ''' task's last exception '''
+        return self._error
+
+    @property
+    def aborted(self):
+        ''' the task is aborted.
+
+            A task can be aborted by calling job::stop():
+
+            mytask = MyTask()
+            myjob = mytask.run(wait=True)
+            ...
+            myjob.stop()
+
+            The output is: the job is either cancelled before execution, or
+            stopped prematurely by raising JobStopError while executing by
+            job itself.
+
+        '''
+        return self._status == Task.Status.DONE and \
+            self._ec in [Task.ErrorCode.CANCELLED,
+                         Task.ErrorCode.STOPPED]
 
     @property
     def result(self):
@@ -206,8 +234,11 @@ class Task:
     # run
 
     def run(self, wait=True):
-        """ wait= True, sync, execute the task, returns when the task is
-            either done or cancelled """
+        """ Execute the task
+
+            SYNC (wait=True): returns when the task is either done or cancelled
+            ASYNC (wait=False): returns the job instance to run the task.
+        """
 
         self._error = None
         self._result = None
@@ -239,7 +270,10 @@ class Task:
 
     def on_error(self, err):
         ''' called when task is done with exception /error '''
-        self._ec = Task.ErrorCode.ERROR
+        if isinstance(err, job.JobStopError):
+            self._ec = Task.ErrorCode.STOPPED
+        else:
+            self._ec = Task.ErrorCode.ERROR
         self._error = err
         self._status = Task.Status.DONE
 

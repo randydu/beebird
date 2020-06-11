@@ -7,12 +7,24 @@ from concurrent import futures
 
 from . import runner
 
+class JobError(Exception):
+    ''' base of error from job object '''
+
+class JobStopError(JobError):
+    ''' Job is terminated due to itself or some of its sub-jobs are stopped. '''
+
 
 class Job:
     ''' Unit to execute a task '''
     def __init__(self, task):
         self._task = task
         self._future = None
+        self._stop = False # signal that the running job should be stopped asap.
+
+    @property
+    def task(self):
+        ''' task to be executed by this job '''
+        return self._task
 
     def __call__(self):
         ''' job being executed
@@ -21,16 +33,31 @@ class Job:
         '''
         self._task.on_running()
 
-    def cancel(self):
-        ''' cancel a job '''
+    def stop(self):
+        ''' stop a job
+
+        If the job is already submitted, try to cancel its execution later.
+        If the job is being executed, it is the job's responsibility to check
+        the "self._stop" signal and terminate the job execution as soon as
+        possible by raising a JobStopError.
+
+        returns: True if job is cancelled successfully, False if the job
+          cannot be cancelled and has to be stopped by the job itself while
+          executing.
+        '''
+        self._stop = True
         return self._future.cancel()
 
     def execute(self, wait=True):
-        ''' starts job execution '''
+        ''' starts job execution
+
+            returns:
+                task result if sync (wait==True) else job itself
+        '''
         self._task.on_submitted()
         self._future = runner.submit_job(self)
         self._future.add_done_callback(self._callback_done)
-        return self._future.result() if wait else None
+        return self._future.result() if wait else self
 
     def _callback_done(self, future):
         ''' callback when job is done '''

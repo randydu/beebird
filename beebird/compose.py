@@ -12,11 +12,10 @@ import threading
 import collections
 
 from beebird.task import Task
-from beebird.job import Job
+from beebird.job import Job, JobStopError
 from beebird.decorators import runtask
 
-
-def _flatten(tasks, cls):
+def _flatten(tasks, cls) -> list:
     ''' flatten the nesting serial/parallel tasks '''
     result = []
     for i in tasks:
@@ -44,44 +43,61 @@ class Parallel(Task):
 
 @runtask(Parallel)
 class _ParalletJob(Job):
+    # maximum waiting time for status checking.
+    MAX_WAIT_SECONDS = 1000
+
     def __init__(self, task):
         super().__init__(task)
 
         self._cv = threading.Condition()
         self._count = 0
         self._total = 0
+        self._error = None
 
     def task_done_callback(self, task):  # pylint: disable=unused-argument
         ''' called when task is done '''
         with self._cv:
-            self._count -= 1
+            if task.aborted:
+                self._stop = True
+            elif task.error_code == Task.ErrorCode.ERROR:
+                self._error = task.error
+            else:  # success
+                self._count += 1
 
-            self._task.progress = 1 - self._count / self._total
-
-            if self._count == 0:
-                self._cv.notify()
+            self._cv.notify()
 
     def __call__(self):
         super().__call__()
 
         tasks = self._task._tasks
 
-        for i in tasks:
-            i.add_done_callback(self.task_done_callback)
-            self._count += 1
-
-        self._total = self._count
+        self._total = len(tasks)
+        self._count = 0
         self._task.progress = 0
 
         if self._total > 0:
-            with self._cv:
-                for i in tasks:
-                   # print(f"submit task {i}")
-                    i.run(wait=False)
+            jobs = []
+            for i in tasks:
+                i.add_done_callback(self.task_done_callback)
+                jobs.append(i.run(wait=False))
 
-                # print("waiting all task done...")
-                self._cv.wait()
-                # print("done")
+            while True:
+                with self._cv:
+                    if self._stop or self._error:
+                        for job_ in jobs:
+                            job_.stop()
+
+                        if self._error:
+                            raise self._error
+
+                        raise JobStopError()
+
+                    self._task.progress = self._count / self._total
+
+                    if self._count == self._total:
+                        break
+
+                    self._cv.wait(_ParalletJob.MAX_WAIT_SECONDS)
 
         return [t.result for t in tasks]
 
@@ -98,7 +114,11 @@ class Serial(Task):
 
 @runtask(Serial)
 class _SerialJob(Job):
-    ''' execute task in serial '''
+    ''' execute task one by one.
+
+        Returns: array of results in order of task execution on success,
+        raises the exception of first task on error.
+    '''
 
     def __call__(self):
         super().__call__()
@@ -108,14 +128,24 @@ class _SerialJob(Job):
         total = len(tasks)
         self._task.progress = 0
 
+        results = []
         if total > 0:
             count = 0
             for i in tasks:
                 i.run(wait=True)
+
+                if self._stop or i.aborted:
+                    raise JobStopError()
+
+                if i.error_code == Task.ErrorCode.ERROR:
+                    raise i.error
+
+                # success
+                results.append(i.result)
                 count += 1
                 self._task.progress = count / total
 
-        return [t.result for t in tasks]
+        return results
 
 
 # ----- Unity task ------
@@ -287,19 +317,29 @@ class _BucketJob(Job):
         self._cv = threading.Condition()
         self._stop = False
 
-        self._total = self._task.total
-        self._count = 0
+        self._total = self._task.total  # total tasks in bucket
+        self._count = 0  # total successful tasks
+        self._jobs = {}  # running jobs, task_id => submitted job
 
-    def cancel(self):
-        ''' cancel a job '''
-        self._stop = True
-        super().cancel()
+        self._error_task = None  # task done with error (first one)
 
     def task_done_callback(self, task):  # pylint: disable=unused-argument
         ''' called when task is done '''
         with self._cv:
-            self._task.decimate_pre_task(task)
-            self._count += 1
+            try:
+                del self._jobs[id(task)]
+            except KeyError:
+                pass
+
+            if task.error_code == Task.ErrorCode.SUCCESS:
+                self._task.decimate_pre_task(task)
+                self._count += 1
+            elif task.aborted:
+                self._stop = True
+            else:  # on error
+                if self._error_task is None:  # first exception only
+                    self._error_task = task
+
             self._cv.notify()
 
     def __call__(self):
@@ -307,21 +347,33 @@ class _BucketJob(Job):
 
         bkt = self._task
 
-        while not self._stop:
+        while True:
             with self._cv:
-                self._cv.wait(_BucketJob.MAX_WAIT_SECONDS)
-
-                if self._stop:
-                    break
 
                 self._task.progress = self._count / self._total
 
                 if self._total == self._count:  # empty, done.
                     break
 
+                if self._stop or self._error_task:
+                    # a task ends abnormally, exiting the bucket execution
+                    for i in self._jobs:
+                        i.stop()
+
+                    # ?? should we wait for the ending of all running jobs
+                    # ?? before return?
+
+                    if self._error_task:
+                        raise self._error_task.error
+
+                    # this job is stopped.
+                    raise JobStopError()
+
                 tasks = bkt.find_leaf_tasks()
                 if tasks:
                     bkt.remove_tasks(tasks)
                     for i in tasks:
                         i.add_done_callback(self.task_done_callback)
-                        i.run(wait=False)
+                        self._jobs[id(i)] = i.run(wait=False)  # job
+
+                self._cv.wait(_BucketJob.MAX_WAIT_SECONDS)

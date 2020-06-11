@@ -3,8 +3,9 @@ import sys
 import pytest
 from time import sleep
 
-from beebird.decorators import task
+from beebird.decorators import task_
 from beebird.compose import *
+from beebird.task import Task
 
 
 def test_add():
@@ -70,7 +71,7 @@ def test_bucket_run():
     ''' test bucket running order '''
     results = []
 
-    @task
+    @task_
     def echo(i):
         print('echo: %d' % i)
         sleep(1)
@@ -102,3 +103,27 @@ def test_bucket_run():
     bkt.run(wait=True)
     print(results)
     assert results in [[0, 1, 2, 3], [1, 0, 2, 3], [0, 1, 3, 2], [1, 0, 3, 2]]
+
+def test_bucket_error():
+    ''' test bucket running error '''
+    @task_
+    def echo(i):
+        print('echo: %d' % i)
+        sleep(1)
+        if i == 1:
+            raise ValueError(f'error:{i}')
+
+    t0 = echo(0)
+    t1 = echo(1)
+    t2 = echo(2)
+
+    bkt = Bucket()
+    bkt.add(t1,[t0])
+    bkt.add(t2,[t1])
+
+    with pytest.raises(ValueError):
+        bkt.run(wait=True)
+    
+    assert bkt.status == Task.Status.DONE
+    assert bkt.error_code == Task.ErrorCode.ERROR
+    assert isinstance(bkt.error, ValueError)
