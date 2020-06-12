@@ -1,7 +1,9 @@
+import pytest
+
 from beebird import compose
 
 from beebird.task import Task
-from beebird.decorators import task, task_ as ptask 
+from beebird.decorators import task, task_ as ptask
 
 def test_parallel():
 
@@ -14,11 +16,22 @@ def test_parallel():
     @ptask
     def P3(): return 3
 
-    tsk = compose.Parallel(P1(), P2(), P3())
+    tsk = compose.Parallel(P1, P2, P3)
     tsk.run()
 
     assert tsk.result == [1, 2, 3]
     assert tsk.error_code == Task.ErrorCode.SUCCESS
+
+    @ptask
+    def err():
+        raise ValueError('err')
+
+    tsk = compose.Parallel(P1, P2, P3, err)
+    with pytest.raises(ValueError):
+        r = tsk.run(wait=True)
+        assert tsk.error_code == Task.ErrorCode.ERROR
+        assert isinstance(tsk.error, ValueError)
+
 
 def test_serial():
 
@@ -31,11 +44,21 @@ def test_serial():
     @ptask
     def S3(): return 3
 
-    tsk = compose.Serial(S1(), S2(), S3())
+    tsk = compose.Serial(S1, S2, S3)
     tsk.run()
 
     assert tsk.result == [1, 2, 3]
     assert tsk.error_code == Task.ErrorCode.SUCCESS
+
+    @ptask
+    def err():
+        raise ValueError('err')
+
+    tsk = compose.Serial(S1, err, S2, S3)
+    with pytest.raises(ValueError):
+        r = tsk.run(wait=True)
+        assert tsk.error_code == Task.ErrorCode.ERROR
+        assert isinstance(tsk.error, ValueError)
 
 def test_serial_flatten():
 
@@ -77,3 +100,36 @@ def test_mixed():
 
     assert tsk.result == ['ms1', ['mp1', 'mp2'], 'ms2']
     assert tsk.error_code == Task.ErrorCode.SUCCESS
+
+
+def test_do():
+    @ptask
+    def ok():
+        return 'ok' 
+    
+    r = compose.do(ok).run(wait=True)
+    assert r == 'ok'
+
+    @ptask
+    def then1():
+        return 'good'
+    
+    r = compose.do(ok).then(then1).run(wait=True)
+    assert r == ['ok', 'good']
+
+    @ptask
+    def err():
+        raise ValueError('err')
+    
+    tsk = compose.do(ok).then(err)
+    with pytest.raises(ValueError):
+        r = tsk.run(wait=True)
+        assert tsk.error_code == Task.ErrorCode.ERROR
+        assert r is None
+
+    @ptask
+    def err_handler(err):
+        return str(err)
+    
+    r = compose.do(ok).then(err).catch(err_handler).run(wait=True)
+    assert r == 'err'

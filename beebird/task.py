@@ -78,7 +78,7 @@ class TaskMan:
         return self.tasks
 
 
-class Task: # pylint: disable=too-many-public-methods
+class Task:  # pylint: disable=too-many-public-methods
     """ Base of all tasks """
 
     class Status(IntEnum):
@@ -194,7 +194,9 @@ class Task: # pylint: disable=too-many-public-methods
     @property
     def result(self):
         ''' task's result, available when the associated job is done '''
-        return self._result
+        if self._ec == Task.ErrorCode.SUCCESS:
+            return self._result
+        raise ValueError('result is not available on task failure')
 
     def is_progress_available(self):
         ''' progress feedback '''
@@ -204,7 +206,7 @@ class Task: # pylint: disable=too-many-public-methods
     def progress(self) -> float:
         ''' complete guage [0.0, 1.0] '''
         if self._progress < 0:
-            raise RuntimeError('progress not available')
+            raise ValueError('progress not available')
 
         return self._progress
 

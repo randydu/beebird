@@ -15,6 +15,7 @@ from beebird.task import Task
 from beebird.job import Job, JobStopError
 from beebird.decorators import runtask
 
+
 def _flatten(tasks, cls) -> list:
     ''' flatten the nesting serial/parallel tasks '''
     result = []
@@ -25,6 +26,14 @@ def _flatten(tasks, cls) -> list:
             result.append(i)
 
     return result
+
+def _resolve_task(cls_or_task)->Task:
+    ''' resolve a task instance '''
+    if isinstance(cls_or_task, Task):
+        return cls_or_task
+    if issubclass(cls_or_task, Task):
+        return cls_or_task()
+    raise ValueError('input must be a task object or a subclass of Task')
 
 
 class Parallel(Task):
@@ -38,7 +47,7 @@ class Parallel(Task):
 
     def __init__(self, *tasks):
         super().__init__()
-        self._tasks = _flatten(tasks, Parallel)
+        self._tasks = _flatten([_resolve_task(i) for i in tasks], Parallel)
 
 
 @runtask(Parallel)
@@ -109,7 +118,7 @@ class Serial(Task):
 
     def __init__(self, *tasks):
         super().__init__()
-        self._tasks = _flatten(tasks, Serial)
+        self._tasks = _flatten([_resolve_task(i) for i in tasks], Serial)
 
 
 @runtask(Serial)
@@ -377,3 +386,75 @@ class _BucketJob(Job):
                         self._jobs[id(i)] = i.run(wait=False)  # job
 
                 self._cv.wait(_BucketJob.MAX_WAIT_SECONDS)
+
+
+# -------------- Control Flow --------------
+
+class do(Task): # pylint: disable=invalid-name
+    ''' do then catch '''
+
+    def __init__(self, task_cond):
+        super().__init__()
+        self._then = [_resolve_task(task_cond)]
+        self._catch = None
+
+    def then(self, task_then):
+        ''' run the task if all preceding tasks are done successfully '''
+        self._then.append(_resolve_task(task_then))
+        return self
+
+    def catch(self, task_catch):
+        ''' error handler '''
+        self._catch = _resolve_task(task_catch)
+        return self
+
+
+@runtask(do)
+class _JobDo(Job):
+    MAX_WAIT_SECONDS = 1
+
+    def __init__(self, task):
+        super().__init__(task)
+
+        self._event = threading.Event()
+
+    def _on_tasks_done(self, _):
+        ''' called when the then tasks are done '''
+        self._event.set()  # wake up
+
+    def __call__(self):
+        then = self._task._then
+        total = len(then)
+        if total == 0:
+            return None, None
+
+        tsk = then[0] if total == 1 else Serial(*self._task._then)
+        tsk.add_done_callback(self._on_tasks_done)
+        job_ = tsk.run(wait=False)
+
+        while True:
+            if self._stop:
+                job_.stop()
+                raise JobStopError()
+
+            if tsk.status == Task.Status.DONE:
+                if tsk.aborted:
+                    raise JobStopError()
+
+                if tsk.error_code == Task.ErrorCode.SUCCESS:
+                    return tsk.result
+
+                # runs error handler
+                handler = self._task._catch
+                if handler is None:
+                    raise tsk.error  # no error handler
+
+                handler.err = tsk.error  # sets the error to handle
+                handler.run(wait=True)  # sync
+
+                if handler.error_code == Task.ErrorCode.SUCCESS:
+                    return handler.result
+
+                return handler.error
+
+            self._event.wait(_JobDo.MAX_WAIT_SECONDS)
