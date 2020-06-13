@@ -133,3 +133,28 @@ def test_do():
     
     r = compose.do(ok).then(err).catch(err_handler).run(wait=True)
     assert r == 'err'
+
+tries = 0
+def test_tryrun():
+    global tries
+    
+    @ptask
+    def f():
+        ''' success on second tries '''
+        global tries
+        tries += 1
+        print('tries: ', tries)
+        if tries < 2:
+            raise ValueError()
+        return 'ok'
+    
+    tries = 0
+    with pytest.raises(ValueError):
+        tsk = compose.TryRun(f)
+        assert tsk.run(wait=True) == 'ok'
+
+    tries = 0
+    with pytest.raises(ValueError):
+        tsk = compose.TryRun(f, max_tries=1, sleep_seconds=0)
+        tsk.run(wait=True)
+        assert tsk.error_code == Task.ErrorCode.ERROR

@@ -10,6 +10,8 @@
 
 import threading
 import collections
+import copy
+import time
 
 from beebird.task import Task
 from beebird.job import Job, JobStopError
@@ -458,3 +460,50 @@ class _JobDo(Job):
                 return handler.error
 
             self._event.wait(_JobDo.MAX_WAIT_SECONDS)
+
+# ---------- safe_run ---------
+class TryRun(Task):
+    ''' try running a task until it is done successfully.
+
+        max_tries: maximum tries (default = 3)
+                  if maximum == 0: unlimited tries
+        
+        sleep_seconds: sleep time before another try. (default: 1 seconds)
+                      0: no sleep
+        returns task result on success, otherwise error of last run is raised.
+    '''
+    def __init__(self, tsk, *, max_tries=3, sleep_seconds=1):
+        super().__init__()
+        self._task = _resolve_task(tsk)
+
+        if max_tries < 0:
+            raise ValueError('max_tries must >=0')
+        self._max_tries = max_tries
+        
+        if sleep_seconds < 0:
+            raise ValueError('sleep_seconds must >=0')
+        self._sleep_seconds = sleep_seconds
+
+@runtask(TryRun)
+class _TryRunJob(Job):
+    def __call__(self):
+        max_tries = self._task._max_tries
+        sleep_seconds = self._task._sleep_seconds
+        count = 0
+
+        task_orig = self._task._task
+        while True:
+            if self._stop:
+                raise JobStopError()
+
+            tsk = copy.copy(task_orig)
+            tsk.run(wait=True)
+            if tsk.error_code == Task.ErrorCode.SUCCESS:
+                return tsk.result
+
+            count += 1
+            if 0 < max_tries <= count:
+                raise tsk.error
+
+            if sleep_seconds > 0:
+                time.sleep(sleep_seconds)
