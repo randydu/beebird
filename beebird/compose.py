@@ -174,6 +174,7 @@ class _Unity(Task):
 
     def run(self, wait=True):
         ''' do nothing '''
+        self.on_success(None)
 
     def __add__(self, tsk):
         ''' unity + task returns task '''

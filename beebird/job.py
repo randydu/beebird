@@ -2,10 +2,16 @@
   Job: task is doc, job is to run / control a task at runtime.
 
 '''
+import inspect
 
 from concurrent import futures
 
 from . import runner
+
+# name of parameter transferring job to wrapped task function
+# if a task func wants to access job instance, it should add '_job' to
+# its parameter list
+JOB_PARMA = '_job_'
 
 class JobError(Exception):
     ''' base of error from job object '''
@@ -48,6 +54,11 @@ class Job:
         self._stop = True
         return self._future.cancel()
 
+    def check_stop(self):
+        ''' check stop signal, raise JobStopError on stopping '''
+        if self._stop:
+            raise JobStopError()
+
     def execute(self, wait=True):
         ''' starts job execution
 
@@ -75,7 +86,14 @@ class CallableTaskJob(Job):
         It is the default job class if no other Job class is specified for
         a task class via @runtask
     '''
+    def __init__(self, task):
+        super().__init__(task)
+
+        params = inspect.signature(task.__call__).parameters
+        self._has_job_param = JOB_PARMA in params
 
     def __call__(self):
         super().__call__()
+        if self._has_job_param:
+            return self._task(_job_=self)
         return self._task()
