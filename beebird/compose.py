@@ -468,7 +468,7 @@ class TryRun(Task):
 
         max_tries: maximum tries (default = 3)
                   if maximum == 0: unlimited tries
-        
+
         sleep_seconds: sleep time before another try. (default: 1 seconds)
                       0: no sleep
         returns task result on success, otherwise error of last run is raised.
@@ -480,7 +480,7 @@ class TryRun(Task):
         if max_tries < 0:
             raise ValueError('max_tries must >=0')
         self._max_tries = max_tries
-        
+
         if sleep_seconds < 0:
             raise ValueError('sleep_seconds must >=0')
         self._sleep_seconds = sleep_seconds

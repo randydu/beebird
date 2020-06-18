@@ -4,7 +4,7 @@ import inspect
 from py_json_serialize import json_serialize
 
 from .task import Task, TaskMan
-from .job import Job, CallableTaskJob, JOB_PARMA
+from .job import Job, CallableTaskJob, JOB_PARAM
 
 
 class Empty:  # pylint: disable=too-few-public-methods
@@ -90,11 +90,16 @@ def _task_func(func, public):
     '''
 
     params = inspect.signature(func).parameters
+    param_names = [*params]
+
+    has_job_param = False
+    if JOB_PARAM in param_names:
+        has_job_param = True
+        param_names = [i for i in param_names if i != JOB_PARAM]
 
     task_name = func.__name__
 
     def init(self, *args, **kwargs):
-        param_names = [*params]
         # pass by position
         for i, val in enumerate(args):
             try:
@@ -110,13 +115,8 @@ def _task_func(func, public):
                     pass
 
     fields = {}
-    has_job_param = False
 
-    for name in params:
-        if name == JOB_PARMA:
-            has_job_param = True
-            continue
-
+    for name in param_names:
         param = params[name]
         val = param.default
 
@@ -134,8 +134,7 @@ def _task_func(func, public):
 
     if public:
         # pylint: disable= no-member
-        TaskMan.instance().register(json_serialize(
-            wrap_task))
+        TaskMan.instance().register(json_serialize(wrap_task))
 
     class WrapJob(Job):
         ''' wrapper job to run the task'''
@@ -143,11 +142,11 @@ def _task_func(func, public):
         def __call__(self):
             super().__call__()
 
-            orig_params = { x: self._task.__getattribute__(x) for x in params }
+            orig_params = {x: self._task.__getattribute__(
+                x) for x in param_names}
             if has_job_param:
                 return func.__call__(**{JOB_PARAM: self, **orig_params})
-            else:
-                return func.__call__(**orig_params)
+            return func.__call__(**orig_params)
 
     wrap_task.set_job_class(WrapJob)
 
@@ -226,7 +225,7 @@ def job(cls_task: Task):
     """ function decorator to turn a function into a job class
 
     @job(cls_task)
-    def upload(task):
+    def upload(task, [_job_]):
         ...
 
     """
@@ -234,11 +233,12 @@ def job(cls_task: Task):
     def wrapper(func):
         class WrapJob(Job):
             ''' job class to run task via decorated function '''
-            def __init__(self, task):
-                    super().__init__(task)
 
-                    params = inspect.signature(func).parameters
-                    self._has_job_param = JOB_PARMA in params
+            def __init__(self, tsk):
+                super().__init__(tsk)
+
+                params = inspect.signature(func).parameters
+                self._has_job_param = JOB_PARAM in params
 
             def __call__(self):
                 super().__call__()

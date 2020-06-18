@@ -1,7 +1,8 @@
 import pytest
 
 from beebird.task import Task, TaskMan 
-from beebird.decorators import task, task_
+from beebird.job import Job
+from beebird.decorators import task, task_, job
 from beebird.compose import unity
 
 def test_task_create():
@@ -108,8 +109,6 @@ def test_unity():
     assert unity.result == None
 
 def test_task_init(): 
-    import beebird.task
-    
     @task_
     def F(a,b): pass
 
@@ -129,3 +128,43 @@ def test_task_init():
     f3 = F(1,b=2)
     assert f3.a == 1
     assert f3.b == 2
+
+def test_job_param():
+    # func-based task
+    @task_
+    def f1(_job_,i):
+        assert isinstance(_job_, Job)
+        return i
+
+    tsk = f1(1)
+    r = tsk.run(wait=True)
+    assert r == 1
+
+    # callable-class-based task
+    @task_
+    class F:
+        def __init__(self, i):
+            self.i = i
+
+        def __call__(self, _job_):
+            assert isinstance(_job_, Job)
+            return self.i
+
+    tsk = F(1)
+    r = tsk.run(wait=True)
+    assert r == 1
+
+    # seperated task and job
+    @task_
+    class G:
+        def __init__(self, i):
+            self.i = i
+
+    @job(G)
+    def do_g(tsk, _job_):
+        assert isinstance(_job_, Job)
+        return tsk.i
+
+    tsk = G(1)
+    r = tsk.run(wait=True)
+    assert r == 1

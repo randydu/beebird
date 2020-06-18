@@ -11,7 +11,7 @@ from . import runner
 # name of parameter transferring job to wrapped task function
 # if a task func wants to access job instance, it should add '_job' to
 # its parameter list
-JOB_PARMA = '_job_'
+JOB_PARAM = '_job_'
 
 class JobError(Exception):
     ''' base of error from job object '''
@@ -22,8 +22,8 @@ class JobStopError(JobError):
 
 class Job:
     ''' Unit to execute a task '''
-    def __init__(self, task):
-        self._task = task
+    def __init__(self, tsk):
+        self._task = tsk
         self._future = None
         self._stop = False # signal that the running job should be stopped asap.
 
@@ -85,12 +85,19 @@ class CallableTaskJob(Job):
 
         It is the default job class if no other Job class is specified for
         a task class via @runtask
-    '''
-    def __init__(self, task):
-        super().__init__(task)
 
-        params = inspect.signature(task.__call__).parameters
-        self._has_job_param = JOB_PARMA in params
+        e.g.
+
+            @task
+            class A:
+                def __call__(self, [_job_]):
+                    pass
+    '''
+    def __init__(self, tsk):
+        super().__init__(tsk)
+
+        params = inspect.signature(tsk.__call__).parameters
+        self._has_job_param = JOB_PARAM in params
 
     def __call__(self):
         super().__call__()

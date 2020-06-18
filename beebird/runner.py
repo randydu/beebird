@@ -10,7 +10,7 @@ class _Runner: # pylint: disable=too-few-public-methods
     """ job executor """
 
     def __init__(self):
-        self._executor = futures.ThreadPoolExecutor(max_workers=6)
+        self._executor = futures.ThreadPoolExecutor(max_workers=10)
 
     def submit(self, job):
         ''' submit a job to be executed by thread pool '''
