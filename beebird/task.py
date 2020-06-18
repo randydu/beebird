@@ -234,9 +234,8 @@ class Task:  # pylint: disable=too-many-public-methods
             file.write(jstr)
 
     # run
-
     def run(self, wait=True):
-        """ Execute the task
+        """ Execute the task in thread pool
 
             SYNC (wait=True): returns when the task is either done or cancelled
             ASYNC (wait=False): returns the job instance to run the task.

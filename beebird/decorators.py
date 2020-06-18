@@ -129,8 +129,16 @@ def _task_func(func, public):
 
         fields = {**fields, name: val}
 
+    def call(self, *, _job_=None):
+        ''' Execute the task in current thread '''
+        orig_params = {x: self.__getattribute__(x) for x in param_names}
+        if has_job_param:
+            return func.__call__(**{JOB_PARAM: _job_, **orig_params})
+        return func.__call__(**orig_params)
+        
+
     wrap_task = type(task_name, (Task,), {
-        **fields, **{'__init__': init, '__doc__': func.__doc__}})
+        **fields, **{'__init__': init, 'call': call, '__doc__': func.__doc__}})
 
     if public:
         # pylint: disable= no-member
@@ -141,12 +149,8 @@ def _task_func(func, public):
 
         def __call__(self):
             super().__call__()
+            return self._task.call(_job_=self)
 
-            orig_params = {x: self._task.__getattribute__(
-                x) for x in param_names}
-            if has_job_param:
-                return func.__call__(**{JOB_PARAM: self, **orig_params})
-            return func.__call__(**orig_params)
 
     wrap_task.set_job_class(WrapJob)
 

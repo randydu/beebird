@@ -1,5 +1,6 @@
 import pytest
 
+import beebird
 from beebird.task import Task, TaskMan 
 from beebird.job import Job
 from beebird.decorators import task, task_, job
@@ -168,3 +169,10 @@ def test_job_param():
     tsk = G(1)
     r = tsk.run(wait=True)
     assert r == 1
+
+def test_task_call():
+    @task_
+    def callme(i):
+        return i
+
+    assert callme(1).call() == 1
