@@ -2,8 +2,6 @@
   Job: task is doc, job is to run / control a task at runtime.
 
 '''
-import inspect
-
 from concurrent import futures
 
 from . import runner

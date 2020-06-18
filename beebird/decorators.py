@@ -58,7 +58,7 @@ def _task_class(cls_task, public):
         def direct_call(self, *, _job_=None):
             #in-thread direct call
             return self(_job_=_job_) if has_job_param else self()
-        
+
         Wraptask.call = direct_call
 
         Wraptask.set_job_class(CallableTaskJob)
@@ -144,7 +144,6 @@ def _task_func(func, public):
         if has_job_param:
             return func.__call__(**{JOB_PARAM: _job_, **orig_params})
         return func.__call__(**orig_params)
-        
 
     wrap_task = type(task_name, (Task,), {
         **fields, **{'__init__': init, 'call': direct_call, '__doc__': func.__doc__}})
