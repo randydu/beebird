@@ -51,7 +51,16 @@ def _task_class(cls_task, public):
     # if the class object is callable then we assume it is the default Job
     # class to deal with this task.
     # it can be modified by @runtask (in job module)
-    if '__call__' in dir(Wraptask):
+    if '__call__' in dir(cls_task):
+        params = inspect.signature(cls_task.__call__).parameters
+        has_job_param = JOB_PARAM in params
+
+        def direct_call(self, *, _job_=None):
+            #in-thread direct call
+            return self(_job_=_job_) if has_job_param else self()
+        
+        Wraptask.call = direct_call
+
         Wraptask.set_job_class(CallableTaskJob)
 
     if public:
@@ -129,7 +138,7 @@ def _task_func(func, public):
 
         fields = {**fields, name: val}
 
-    def call(self, *, _job_=None):
+    def direct_call(self, *, _job_=None):
         ''' Execute the task in current thread '''
         orig_params = {x: self.__getattribute__(x) for x in param_names}
         if has_job_param:
@@ -138,7 +147,7 @@ def _task_func(func, public):
         
 
     wrap_task = type(task_name, (Task,), {
-        **fields, **{'__init__': init, 'call': call, '__doc__': func.__doc__}})
+        **fields, **{'__init__': init, 'call': direct_call, '__doc__': func.__doc__}})
 
     if public:
         # pylint: disable= no-member

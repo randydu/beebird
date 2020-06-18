@@ -172,7 +172,19 @@ def test_job_param():
 
 def test_task_call():
     @task_
-    def callme(i):
+    def callme(_job_,i):
+        assert _job_ is None or isinstance(_job_, Job)
         return i
 
     assert callme(1).call() == 1
+
+    @task_
+    class CallMe:
+        def __init__(self, i):
+            self.i = i
+        def __call__(self, _job_):
+            assert _job_ is None or isinstance(_job_, Job)
+            return self.i
+
+    assert CallMe(1).call() == 1
+    assert CallMe(1).run(wait=True) == 1

@@ -93,14 +93,6 @@ class CallableTaskJob(Job):
                 def __call__(self, [_job_]):
                     pass
     '''
-    def __init__(self, tsk):
-        super().__init__(tsk)
-
-        params = inspect.signature(tsk.__call__).parameters
-        self._has_job_param = JOB_PARAM in params
-
     def __call__(self):
         super().__call__()
-        if self._has_job_param:
-            return self._task(_job_=self)
-        return self._task()
+        return self._task.call(_job_=self)
