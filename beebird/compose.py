@@ -12,6 +12,7 @@ import threading
 import collections
 import copy
 import time
+import queue
 
 from beebird.task import Task
 from beebird.job import Job, JobStopError
@@ -426,6 +427,8 @@ class _JobDo(Job):
         self._event.set()  # wake up
 
     def __call__(self):
+        super().__call__()
+
         then = self._task._then
         total = len(then)
         if total == 0:
@@ -488,6 +491,8 @@ class TryRun(Task):
 @runtask(TryRun)
 class _TryRunJob(Job):
     def __call__(self):
+        super().__call__()
+
         max_tries = self._task._max_tries
         sleep_seconds = self._task._sleep_seconds
         count = 0
@@ -508,3 +513,51 @@ class _TryRunJob(Job):
 
             if sleep_seconds > 0:
                 time.sleep(sleep_seconds)
+
+# ------------ FIFO ------------------
+class FIFO(Task):
+    ''' first in first out task queue.
+
+        FIFO is different from Serial in that it will not not terminate
+        until stopped.
+    '''
+
+    MAX_WAIT_SECONDS = 1
+
+    def __init__(self, max_queue_size=10):
+        super().__init__()
+        self._tasks = queue.Queue(maxsize=max_queue_size)
+
+    def add(self, tsk: Task)->bool:
+        ''' adds a task to the queue '''
+        try:
+            self._tasks.put(tsk, block=True, timeout=FIFO.MAX_WAIT_SECONDS)
+            return True
+        except queue.Full:
+            return False
+
+    def get(self)->Task:
+        ''' try retrieving a task.
+
+            return a task if within a maximum period (1 second), or None
+            if no task available during this time period.
+        '''
+        try:
+            return self._tasks.get(block=True, timeout=FIFO.MAX_WAIT_SECONDS)
+        except queue.Empty:
+            return None
+
+@runtask(FIFO)
+class _FIFOJob(Job):
+    def __call__(self):
+        super().__call__()
+
+        task = self._task
+
+        while True:
+            print(f'stop: {self._stop}')
+            self.check_stop()
+
+            tsk = task.get()
+            if tsk:
+                tsk.run(wait=True)

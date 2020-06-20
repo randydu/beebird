@@ -33,7 +33,7 @@ class Job:
     def __call__(self):
         ''' job being executed
 
-            sub-class must call super().__call__(self) first
+            sub-class must call super().__call__() first
         '''
         self._task.on_running()
 
@@ -52,9 +52,11 @@ class Job:
         self._stop = True
         return self._future.cancel()
 
-    def check_stop(self):
+    def check_stop(self, on_stop=None):
         ''' check stop signal, raise JobStopError on stopping '''
         if self._stop:
+            if on_stop:
+                on_stop(self)
             raise JobStopError()
 
     def execute(self, wait=True):

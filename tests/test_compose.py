@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from beebird import compose
 
@@ -158,3 +159,35 @@ def test_tryrun():
         tsk = compose.TryRun(f, max_tries=1, sleep_seconds=0)
         tsk.run(wait=True)
         assert tsk.error_code == Task.ErrorCode.ERROR
+
+
+fifo_done = False
+def test_fifo():
+    @ptask
+    def f(i):
+        global fifo_done
+        time.sleep(1)
+        print(f'>> {i}')
+        fifo_done = (i == 9)
+    
+    fifo = compose.FIFO(1)
+    fifo_job = fifo.run(wait=False)
+
+    for i in range(10):
+        print(f'submitting job {i}')
+        ok = False
+        while not ok:
+            ok = fifo.add(f(i))
+        print(f'job {i} submited')
+
+    while not fifo_done:
+        time.sleep(1)
+
+    fifo_job.stop()
+
+    print('waiting for fifo stopped...')
+    while fifo.status != Task.Status.DONE:
+        time.sleep(1)
+        print(f'fifo status: {fifo.status}')
+
+    
