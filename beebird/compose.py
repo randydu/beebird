@@ -555,7 +555,6 @@ class _FIFOJob(Job):
         task = self._task
 
         while True:
-            print(f'stop: {self._stop}')
             self.check_stop()
 
             tsk = task.get()
