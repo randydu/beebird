@@ -524,14 +524,23 @@ class FIFO(Task):
 
     MAX_WAIT_SECONDS = 1
 
-    def __init__(self, max_queue_size=10):
+    def __init__(self, max_queue_size=10, max_wait_seconds=MAX_WAIT_SECONDS):
         super().__init__()
         self._tasks = queue.Queue(maxsize=max_queue_size)
+        self._max_wait_seconds = max_wait_seconds
+
+    def check_status(self):
+        ''' make sure the FIFO is still working properly '''
+        if self._status == Task.Status.DONE:
+            # FIFO can be done either when one of task raise error,
+            # or it is cancelled.
+            raise self._error
 
     def add(self, tsk: Task)->bool:
         ''' adds a task to the queue '''
         try:
-            self._tasks.put(tsk, block=True, timeout=FIFO.MAX_WAIT_SECONDS)
+            self.check_status()
+            self._tasks.put(tsk, block=True, timeout=self._max_wait_seconds)
             return True
         except queue.Full:
             return False
@@ -543,7 +552,8 @@ class FIFO(Task):
             if no task available during this time period.
         '''
         try:
-            return self._tasks.get(block=True, timeout=FIFO.MAX_WAIT_SECONDS)
+            self.check_status()
+            return self._tasks.get(block=True, timeout=self._max_wait_seconds)
         except queue.Empty:
             return None
 
@@ -560,3 +570,5 @@ class _FIFOJob(Job):
             tsk = task.get()
             if tsk:
                 tsk.run(wait=True)
+                if tsk.error_code != Task.ErrorCode.SUCCESS:
+                    raise tsk.error
